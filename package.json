@@ -11,7 +11,8 @@
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
     "import": "npm run import --workspace=packages/server",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "npm run typecheck --workspaces --if-present"
   },
   "devDependencies": {
     "concurrently": "^9.0.1",
