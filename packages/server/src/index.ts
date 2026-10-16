@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import { createDatabase } from './db';
+import { listProducts, parseProductListQuery } from './products';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +22,15 @@ app.use(express.json());
 app.get('/health', (_req, res) => {
   db.prepare('SELECT 1').get();
   res.json({ status: 'ok' });
+});
+
+app.get('/api/products', (req, res) => {
+  const parsed = parseProductListQuery(req.query);
+  if (!parsed.ok) {
+    res.status(400).json({ error: 'Invalid query parameters', details: parsed.errors });
+    return;
+  }
+  res.json(listProducts(db, parsed.params));
 });
 
 app.listen(PORT, () => {
