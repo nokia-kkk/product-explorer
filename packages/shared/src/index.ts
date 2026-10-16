@@ -47,6 +47,10 @@ export interface ProductListResponse {
   };
 }
 
+export interface ProductDetailResponse {
+  data: Product;
+}
+
 export interface CategoryListResponse {
   data: CategoryWithCount[];
   meta: {

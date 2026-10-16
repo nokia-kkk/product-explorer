@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Db } from './db';
 import { createDatabase } from './db';
-import { listProducts, parseProductListQuery } from './products';
+import { getProduct, listProducts, parseProductId, parseProductListQuery } from './products';
 
 const temporaryDirs: string[] = [];
 
@@ -172,6 +172,84 @@ describe('listProducts', () => {
     expect(listProducts(db, { q: 'Egg' }).data.map((p) => p.title)).toEqual(['Egg White']);
 
     db.close();
+  });
+});
+
+describe('getProduct', () => {
+  /** A product with every column populated, plus the category name it joins to. */
+  function detailedDb(): Db {
+    const db = temporaryDb();
+    db.prepare(
+      `INSERT INTO products
+        (id, title, description, price, discount_percentage, rating, stock, brand, category_id, thumbnail, images_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      10,
+      'Essence Mascara Lash Princess',
+      'A volumising mascara.',
+      9.99,
+      7.17,
+      4.94,
+      99,
+      'Essence',
+      1,
+      'thumb-10.jpg',
+      JSON.stringify(['img-a.jpg', 'img-b.jpg'])
+    );
+    return db;
+  }
+
+  it('returns the full product with its category name and parsed images', () => {
+    const db = detailedDb();
+
+    expect(getProduct(db, 10)).toEqual({
+      id: 10,
+      title: 'Essence Mascara Lash Princess',
+      description: 'A volumising mascara.',
+      price: 9.99,
+      discountPercentage: 7.17,
+      rating: 4.94,
+      stock: 99,
+      brand: 'Essence',
+      category: 'Beauty',
+      thumbnail: 'thumb-10.jpg',
+      images: ['img-a.jpg', 'img-b.jpg'],
+    });
+
+    db.close();
+  });
+
+  it('returns null for an unknown id', () => {
+    const db = detailedDb();
+
+    expect(getProduct(db, 9999)).toBeNull();
+
+    db.close();
+  });
+
+  it('defaults null description and images to empty values', () => {
+    const db = temporaryDb();
+
+    // temporaryDb inserts omit description and images_json entirely.
+    expect(getProduct(db, 1)).toMatchObject({
+      description: '',
+      images: [],
+    });
+
+    db.close();
+  });
+});
+
+describe('parseProductId', () => {
+  it('accepts a positive integer, including a numeric string', () => {
+    expect(parseProductId('42')).toBe(42);
+    expect(parseProductId('1')).toBe(1);
+  });
+
+  it('rejects anything that is not a positive integer', () => {
+    for (const input of ['abc', '0', '-1', '1.5', '', '1e3', ' 1', '1 ', 'Infinity']) {
+      expect(parseProductId(input), JSON.stringify(input)).toBeNull();
+    }
   });
 });
 

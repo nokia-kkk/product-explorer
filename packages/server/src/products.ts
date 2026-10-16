@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { Db } from './db';
-import type { ProductListResponse } from '@miniapp/shared';
+import type { Product, ProductListResponse } from '@miniapp/shared';
 
 export type ProductListParams = Partial<ParsedProductListQuery>;
 
@@ -122,4 +122,40 @@ export function listProducts(db: Db, params: ProductListParams): ProductListResp
       pageCount: Math.ceil(total / limit),
     },
   };
+}
+
+/** Parses a `:id` path segment, returning null for anything that is not a positive integer. */
+export function parseProductId(value: string): number | null {
+  if (!/^\d+$/.test(value)) return null;
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+type ProductRow = Omit<Product, 'images'> & { images_json: string | null };
+
+export function getProduct(db: Db, id: number): Product | null {
+  const row = db
+    .prepare(
+      `SELECT
+        p.id,
+        p.title,
+        COALESCE(p.description, '') AS description,
+        p.price,
+        p.discount_percentage AS discountPercentage,
+        p.rating,
+        p.stock,
+        COALESCE(p.brand, '') AS brand,
+        c.name AS category,
+        COALESCE(p.thumbnail, '') AS thumbnail,
+        p.images_json
+      FROM products p
+      JOIN categories c ON c.id = p.category_id
+      WHERE p.id = ?`
+    )
+    .get(id) as ProductRow | undefined;
+
+  if (row === undefined) return null;
+
+  const { images_json: imagesJson, ...product } = row;
+  return { ...product, images: imagesJson === null ? [] : (JSON.parse(imagesJson) as string[]) };
 }
