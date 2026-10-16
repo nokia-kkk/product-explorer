@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import { createDatabase } from './db';
+import { listCategories } from './categories';
 import { listProducts, parseProductListQuery } from './products';
 
 const app = express();
@@ -22,6 +23,10 @@ app.use(express.json());
 app.get('/health', (_req, res) => {
   db.prepare('SELECT 1').get();
   res.json({ status: 'ok' });
+});
+
+app.get('/api/categories', (_req, res) => {
+  res.json(listCategories(db));
 });
 
 app.get('/api/products', (req, res) => {
