@@ -22,8 +22,8 @@ function stubApiFetch() {
     meta: { total: 1, page: 1, limit: 12, pageCount: 1 },
   };
   const categoriesResponse: CategoryListResponse = {
-    data: [],
-    meta: { total: 0 },
+    data: [{ id: 1, name: 'Beauty', slug: 'beauty', productCount: 10 }],
+    meta: { total: 1 },
   };
   const productDetailResponse: ProductDetailResponse = {
     data: {
@@ -106,32 +106,25 @@ describe('App', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders the category list page at /categories', () => {
-    render(
-      <MemoryRouter initialEntries={['/categories']}>
-        <App />
-      </MemoryRouter>
-    );
+  it('renders the category list page at /categories', async () => {
+    renderApp(['/categories']);
 
     expect(screen.getByRole('heading', { name: 'Categories' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: /Beauty/ })).toHaveAttribute(
+      'href',
+      '/categories/beauty'
+    );
   });
 
-  it('renders the category detail page at /categories/:slug', () => {
-    render(
-      <MemoryRouter initialEntries={['/categories/beauty']}>
-        <App />
-      </MemoryRouter>
-    );
+  it('renders the category detail page at /categories/:slug', async () => {
+    renderApp(['/categories/beauty']);
 
-    expect(screen.getByRole('heading', { name: 'Category beauty' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Beauty' })).toBeInTheDocument();
+    await screen.findByTestId('product-price');
   });
 
   it('hides the header search input on non-listing routes', () => {
-    render(
-      <MemoryRouter initialEntries={['/categories']}>
-        <App />
-      </MemoryRouter>
-    );
+    renderApp(['/categories']);
 
     expect(screen.queryByRole('searchbox', { name: 'Search products' })).not.toBeInTheDocument();
   });

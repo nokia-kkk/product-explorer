@@ -9,14 +9,16 @@ const SORT_OPTIONS = [
 ] as const;
 
 type ProductToolbarProps = {
+  title: string;
   search: string;
   category: string;
   sortBy: string;
   order: string;
   categories: { id: number; name: string; slug: string }[];
   onSearchChange: (q: string) => void;
-  onCategoryChange: (slug: string) => void;
   onSortChange: (sortBy: string, order: string) => void;
+  /** Omitted when the category is fixed by the route, which hides the select. */
+  onCategoryChange?: (slug: string) => void;
 };
 
 const inputClassName =
@@ -38,6 +40,7 @@ export function useDebouncedValue<T>(value: T, delayMs: number): T {
 }
 
 export default function ProductToolbar({
+  title,
   search,
   category,
   sortBy,
@@ -67,7 +70,7 @@ export default function ProductToolbar({
 
   return (
     <div className="flex flex-col gap-3 md:flex-row md:items-center">
-      <h1 className="text-2xl font-semibold text-gray-900 md:mr-auto">Products</h1>
+      <h1 className="text-2xl font-semibold capitalize text-gray-900 md:mr-auto">{title}</h1>
 
       <input
         type="search"
@@ -79,20 +82,22 @@ export default function ProductToolbar({
         className={`${inputClassName} md:w-64`}
       />
 
-      <select
-        aria-label="Filter by category"
-        name="category"
-        value={category}
-        onChange={(event) => onCategoryChange(event.target.value)}
-        className={`${inputClassName} md:w-48`}
-      >
-        <option value="">All categories</option>
-        {categories.map((c) => (
-          <option key={c.id} value={c.slug}>
-            {c.name}
-          </option>
-        ))}
-      </select>
+      {onCategoryChange && (
+        <select
+          aria-label="Filter by category"
+          name="category"
+          value={category}
+          onChange={(event) => onCategoryChange(event.target.value)}
+          className={`${inputClassName} md:w-48`}
+        >
+          <option value="">All categories</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.slug}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      )}
 
       <select
         aria-label="Sort products"
