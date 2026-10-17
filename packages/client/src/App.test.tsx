@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, within, fireEvent } from '@testing-library/react';
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import App from './App';
@@ -142,5 +142,54 @@ describe('App', () => {
 
     fireEvent.click(toggle);
     expect(screen.queryByRole('navigation', { name: 'Mobile' })).not.toBeInTheDocument();
+  });
+
+  it('navigates from a product card to that product', async () => {
+    renderApp();
+
+    const card = await screen.findByTestId('product-price');
+    const links = within(card.closest('article')!).getAllByRole('link', {
+      name: 'Essence Mascara Lash Princess',
+    });
+    fireEvent.click(links[0]);
+
+    expect(await screen.findByText('A volumising mascara.')).toBeInTheDocument();
+  });
+
+  it('submits the header search and refetches with the q param', async () => {
+    const requestedUrls: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (!url.includes('/api/categories')) {
+          requestedUrls.push(url);
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            data: [],
+            meta: { total: 0, page: 1, limit: 12, pageCount: 0 },
+          }),
+        } as unknown as Response;
+      })
+    );
+
+    renderApp();
+    await screen.findByText('No products found');
+    requestedUrls.length = 0;
+
+    const header = screen.getByRole('banner');
+    fireEvent.change(within(header).getByRole('searchbox', { name: 'Search products' }), {
+      target: { value: '  mascara  ' },
+    });
+    fireEvent.submit(within(header).getByRole('search'));
+
+    await waitFor(() => {
+      expect(requestedUrls.some((url) => url.includes('q=mascara'))).toBe(true);
+    });
+    // Trimmed, so the term carries no stray spaces.
+    expect(requestedUrls.every((url) => !url.includes('+'))).toBe(true);
   });
 });

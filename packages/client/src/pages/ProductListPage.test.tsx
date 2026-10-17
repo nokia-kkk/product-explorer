@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import ProductListPage from './ProductListPage';
 import type { CategoryListResponse, ProductListResponse } from '../types';
 
@@ -248,6 +248,54 @@ describe('ProductListPage', () => {
     });
   });
 
+  it('shows the empty state with correct pagination meta for an out-of-range page', async () => {
+    productsResponse = productResponse([], { total: 120, page: 999, limit: 12, pageCount: 10 });
+    renderPage('/?page=999');
+
+    expect(await screen.findByText('No products found')).toBeInTheDocument();
+
+    const nav = screen.getByRole('navigation', { name: 'Product list pagination' });
+    expect(within(nav).getByText('Page 999 of 10')).toBeInTheDocument();
+    expect(within(nav).getByRole('button', { name: 'Previous page' })).toBeEnabled();
+    expect(within(nav).getByRole('button', { name: 'Next page' })).toBeDisabled();
+  });
+
+  it('shows the page the URL asks for and swaps results when another page is picked', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('/api/categories')) {
+          return jsonResponse(categoriesFixture);
+        }
+        const page = new URL(url, 'http://localhost').searchParams.get('page') ?? '1';
+        return jsonResponse(
+          productResponse([productFixture({ title: `Page ${page} product` })], {
+            total: 120,
+            page: Number(page),
+            pageCount: 10,
+          })
+        );
+      })
+    );
+
+    renderPage('/?page=3');
+
+    expect(await screen.findByText('Page 3 product')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Page 4' }));
+
+    expect(await screen.findByText('Page 4 product')).toBeInTheDocument();
+    expect(screen.queryByText('Page 3 product')).not.toBeInTheDocument();
+
+    const nav = screen.getByRole('navigation', { name: 'Product list pagination' });
+    expect(within(nav).getByText('Page 4 of 10')).toBeInTheDocument();
+    expect(within(nav).getByRole('button', { name: 'Page 4' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+  });
+
   it('abbreviates page numbers beyond seven pages', async () => {
     productsResponse = productResponse([productFixture()], {
       total: 120,
@@ -261,5 +309,106 @@ describe('ProductListPage', () => {
     const nav = screen.getByRole('navigation', { name: 'Product list pagination' });
     expect(within(nav).getAllByRole('button', { name: /^Page \d+$/ })).toHaveLength(5);
     expect(within(nav).getAllByText('…').length).toBeGreaterThan(0);
+  });
+});
+
+describe('ProductListPage URL synchronization', () => {
+  let requestedQueries: string[];
+
+  /** Renders the page next to controls that read and drive the URL directly. */
+  function renderWithUrlControls(initialUrl = '/') {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+
+    function UrlControls() {
+      const navigate = useNavigate();
+      const { search } = useLocation();
+      return (
+        <div>
+          <span data-testid="current-search">{search}</span>
+          <button type="button" onClick={() => navigate(-1)}>
+            Go back
+          </button>
+          <button type="button" onClick={() => navigate(1)}>
+            Go forward
+          </button>
+          {/* Same call the header search form makes: push a new listing URL. */}
+          <button type="button" onClick={() => navigate('/?q=jacket')}>
+            Search for jacket
+          </button>
+        </div>
+      );
+    }
+
+    return render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[initialUrl]}>
+          <UrlControls />
+          <ProductListPage />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+  }
+
+  beforeEach(() => {
+    vi.unstubAllGlobals();
+    requestedQueries = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('/api/categories')) {
+          return jsonResponse(categoriesFixture);
+        }
+        const q = new URL(url, 'http://localhost').searchParams.get('q') ?? 'everything';
+        requestedQueries.push(q);
+        return jsonResponse(
+          productResponse([productFixture({ title: `Product for ${q}` })], {
+            total: 24,
+            pageCount: 2,
+          })
+        );
+      })
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('drives the query and the rendered results from the URL', async () => {
+    renderWithUrlControls('/?q=mascara');
+
+    expect(await screen.findByText('Product for mascara')).toBeInTheDocument();
+    expect(requestedQueries).toEqual(['mascara']);
+
+    // A URL change from outside the toolbar — the same push the header search
+    // form performs — re-drives the query and the rendered results.
+    fireEvent.click(screen.getByRole('button', { name: 'Search for jacket' }));
+
+    expect(await screen.findByText('Product for jacket')).toBeInTheDocument();
+    expect(screen.getByTestId('current-search')).toHaveTextContent('q=jacket');
+    expect(requestedQueries).toContain('jacket');
+    expect(screen.queryByText('Product for mascara')).not.toBeInTheDocument();
+  });
+
+  it('restores search state on browser back and forward', async () => {
+    renderWithUrlControls('/?q=mascara');
+
+    await screen.findByText('Product for mascara');
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search products' }), {
+      target: { value: 'lipstick' },
+    });
+    await screen.findByText('Product for lipstick');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go back' }));
+    expect(screen.getByTestId('current-search')).toHaveTextContent('q=mascara');
+    expect(await screen.findByText('Product for mascara')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go forward' }));
+    expect(screen.getByTestId('current-search')).toHaveTextContent('q=lipstick');
+    expect(await screen.findByText('Product for lipstick')).toBeInTheDocument();
   });
 });

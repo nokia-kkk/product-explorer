@@ -239,18 +239,19 @@ export default function ProductList({ title, lockedCategory }: ProductListProps)
       )}
 
       {products.length > 0 && (
-        <>
-          <ul className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((product) => (
-              <li key={product.id}>
-                <ProductCard product={product} />
-              </li>
-            ))}
-          </ul>
-          {meta && meta.pageCount > 1 && (
-            <Pagination page={meta.page} pageCount={meta.pageCount} onPageChange={onPageChange} />
-          )}
-        </>
+        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {products.map((product) => (
+            <li key={product.id}>
+              <ProductCard product={product} />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Kept outside the results block so an out-of-range page still shows its
+          position ("Page 999 of 10") next to the empty state. */}
+      {meta && meta.pageCount > 1 && (
+        <Pagination page={meta.page} pageCount={meta.pageCount} onPageChange={onPageChange} />
       )}
     </section>
   );
