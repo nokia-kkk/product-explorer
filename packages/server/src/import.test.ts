@@ -1,30 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import type { Db } from './db';
-import { createDatabase } from './db';
 import { importProducts } from './import';
+import { cleanupTemporaryState, temporaryDb } from './testing';
 
-const temporaryDirs: string[] = [];
-const openDbs: Db[] = [];
-
-function temporaryDb(): Db {
-  const dir = mkdtempSync(join(tmpdir(), 'miniapp-import-'));
-  temporaryDirs.push(dir);
-  const db = createDatabase(join(dir, 'test.db'));
-  openDbs.push(db);
-  return db;
-}
-
-afterEach(() => {
-  while (openDbs.length > 0) {
-    openDbs.pop()!.close();
-  }
-  while (temporaryDirs.length > 0) {
-    rmSync(temporaryDirs.pop()!, { recursive: true, force: true });
-  }
-});
+afterEach(cleanupTemporaryState);
 
 const categories = [
   { slug: 'beauty', name: 'Beauty', url: 'https://dummyjson.com/products/category/beauty' },
@@ -77,8 +55,6 @@ describe('importProducts', () => {
       'https://cdn.dummyjson.com/1.webp',
       'https://cdn.dummyjson.com/2.webp',
     ]);
-
-    db.close();
   });
 
   it('replaces previously imported data completely', () => {
@@ -102,8 +78,6 @@ describe('importProducts', () => {
     ).toBeUndefined();
     expect(db.prepare('SELECT id FROM products WHERE id = 7').get()).toBeUndefined();
     expect(db.prepare('SELECT COUNT(*) AS count FROM products').get()).toEqual({ count: 1 });
-
-    db.close();
   });
 
   it('rolls back and leaves the existing data intact when the import fails', () => {
@@ -130,8 +104,6 @@ describe('importProducts', () => {
     expect(db.prepare('SELECT name FROM categories WHERE id = 42').get()).toEqual({
       name: 'Stale Category',
     });
-
-    db.close();
   });
 
   it('is idempotent: re-importing the same payload produces identical rows', () => {
@@ -154,8 +126,6 @@ describe('importProducts', () => {
     expect(db.prepare('SELECT COUNT(*) AS count FROM categories').get()).toEqual({
       count: categories.length,
     });
-
-    db.close();
   });
 
   it('rejects a product whose category is not part of the payload', () => {
@@ -170,7 +140,5 @@ describe('importProducts', () => {
 
     expect(db.prepare('SELECT COUNT(*) AS count FROM categories').get()).toEqual({ count: 0 });
     expect(db.prepare('SELECT COUNT(*) AS count FROM products').get()).toEqual({ count: 0 });
-
-    db.close();
   });
 });

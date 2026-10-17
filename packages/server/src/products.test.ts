@@ -1,44 +1,32 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import type { Db } from './db';
-import { createDatabase } from './db';
 import { getProduct, listProducts, parseProductId, parseProductListQuery } from './products';
+import { cleanupTemporaryState, temporaryDb } from './testing';
 
-const temporaryDirs: string[] = [];
+afterEach(cleanupTemporaryState);
 
-function temporaryDb(): Db {
-  const dir = mkdtempSync(join(tmpdir(), 'miniapp-products-'));
-  temporaryDirs.push(dir);
-  const db = createDatabase(join(dir, 'test.db'));
-  const insertCategory = db.prepare('INSERT INTO categories (id, name, slug) VALUES (?, ?, ?)');
-  const insertProduct = db.prepare(
-    `INSERT INTO products
-      (id, title, price, discount_percentage, rating, brand, category_id, thumbnail)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  );
+function seededProductsDb(): Db {
+  return temporaryDb((db) => {
+    const insertCategory = db.prepare('INSERT INTO categories (id, name, slug) VALUES (?, ?, ?)');
+    const insertProduct = db.prepare(
+      `INSERT INTO products
+        (id, title, price, discount_percentage, rating, brand, category_id, thumbnail)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    );
 
-  insertCategory.run(1, 'Beauty', 'beauty');
-  insertCategory.run(2, 'Groceries', 'groceries');
+    insertCategory.run(1, 'Beauty', 'beauty');
+    insertCategory.run(2, 'Groceries', 'groceries');
 
-  insertProduct.run(1, 'Lipstick Red', 12.5, 20, 4.5, 'Chic', 1, 'thumb-1.jpg');
-  insertProduct.run(2, 'Powder Canister', 14.99, 0, 4.7, 'Powdal', 1, 'thumb-2.jpg');
-  insertProduct.run(3, 'Tal Bowl', 17.99, 5, 4.9, 'Green', 2, 'thumb-3.jpg');
-  insertProduct.run(4, 'Egg White', 9.49, 10, 4.2, 'Farm', 2, 'thumb-4.jpg');
-
-  return db;
+    insertProduct.run(1, 'Lipstick Red', 12.5, 20, 4.5, 'Chic', 1, 'thumb-1.jpg');
+    insertProduct.run(2, 'Powder Canister', 14.99, 0, 4.7, 'Powdal', 1, 'thumb-2.jpg');
+    insertProduct.run(3, 'Tal Bowl', 17.99, 5, 4.9, 'Green', 2, 'thumb-3.jpg');
+    insertProduct.run(4, 'Egg White', 9.49, 10, 4.2, 'Farm', 2, 'thumb-4.jpg');
+  });
 }
-
-afterEach(() => {
-  while (temporaryDirs.length > 0) {
-    rmSync(temporaryDirs.pop()!, { recursive: true, force: true });
-  }
-});
 
 describe('listProducts', () => {
   it('returns the first page with default paging and accurate metadata', () => {
-    const db = temporaryDb();
+    const db = seededProductsDb();
 
     const response = listProducts(db, {});
 
@@ -54,56 +42,46 @@ describe('listProducts', () => {
       brand: 'Farm',
       category: 'Groceries',
     });
-
-    db.close();
   });
 
   it('searches titles case-insensitively with q', () => {
-    const db = temporaryDb();
+    const db = seededProductsDb();
 
     const response = listProducts(db, { q: 'EGG' });
 
     expect(response.meta).toEqual({ total: 1, page: 1, limit: 20, pageCount: 1 });
     expect(response.data.map((p) => p.title)).toEqual(['Egg White']);
-
-    db.close();
   });
 
   it('filters by category slug', () => {
-    const db = temporaryDb();
+    const db = seededProductsDb();
 
     const response = listProducts(db, { category: 'beauty' });
 
     expect(response.meta).toEqual({ total: 2, page: 1, limit: 20, pageCount: 1 });
     expect(response.data.map((p) => p.title).sort()).toEqual(['Lipstick Red', 'Powder Canister']);
-
-    db.close();
   });
 
   it('combines search and category filter', () => {
-    const db = temporaryDb();
+    const db = seededProductsDb();
 
     const response = listProducts(db, { q: 'egg', category: 'beauty' });
 
     expect(response.data).toEqual([]);
     expect(response.meta.total).toBe(0);
-
-    db.close();
   });
 
   it('returns empty data with zero total for an unknown category slug', () => {
-    const db = temporaryDb();
+    const db = seededProductsDb();
 
     const response = listProducts(db, { category: 'no-such-category' });
 
     expect(response.data).toEqual([]);
     expect(response.meta).toEqual({ total: 0, page: 1, limit: 20, pageCount: 0 });
-
-    db.close();
   });
 
   it('sorts by price descending', () => {
-    const db = temporaryDb();
+    const db = seededProductsDb();
 
     const response = listProducts(db, { sortBy: 'price', order: 'desc' });
 
@@ -113,22 +91,18 @@ describe('listProducts', () => {
       'Lipstick Red',
       'Egg White',
     ]);
-
-    db.close();
   });
 
   it('sorts by rating ascending', () => {
-    const db = temporaryDb();
+    const db = seededProductsDb();
 
     const response = listProducts(db, { sortBy: 'rating' });
 
     expect(response.data.map((p) => p.rating)).toEqual([4.2, 4.5, 4.7, 4.9]);
-
-    db.close();
   });
 
   it('breaks sort ties deterministically by product id', () => {
-    const db = temporaryDb();
+    const db = seededProductsDb();
     db.prepare(
       'INSERT INTO products (id, title, price, discount_percentage, rating, brand, category_id, thumbnail) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(5, 'Egg Yolk', 9.49, 10, 4.2, 'Farm', 2, 'thumb-5.jpg');
@@ -136,12 +110,10 @@ describe('listProducts', () => {
     const response = listProducts(db, { sortBy: 'rating', limit: 2 });
 
     expect(response.data.map((p) => p.title)).toEqual(['Egg White', 'Egg Yolk']);
-
-    db.close();
   });
 
   it('paginates with page and limit', () => {
-    const db = temporaryDb();
+    const db = seededProductsDb();
 
     const page1 = listProducts(db, { page: 1, limit: 2 });
     const page2 = listProducts(db, { page: 2, limit: 2 });
@@ -149,36 +121,45 @@ describe('listProducts', () => {
     expect(page1.meta).toEqual({ total: 4, page: 1, limit: 2, pageCount: 2 });
     expect(page1.data.map((p) => p.title)).toEqual(['Egg White', 'Lipstick Red']);
     expect(page2.data.map((p) => p.title)).toEqual(['Powder Canister', 'Tal Bowl']);
-
-    db.close();
   });
 
   it('returns empty data with correct meta for an out-of-range page', () => {
-    const db = temporaryDb();
+    const db = seededProductsDb();
 
     const response = listProducts(db, { page: 99, limit: 2 });
 
     expect(response.data).toEqual([]);
     expect(response.meta).toEqual({ total: 4, page: 99, limit: 2, pageCount: 2 });
-
-    db.close();
   });
 
   it('treats % and _ in the search term literally', () => {
-    const db = temporaryDb();
+    const db = seededProductsDb();
 
     expect(listProducts(db, { q: '%White' }).data).toEqual([]);
     expect(listProducts(db, { q: 'Egg_White' }).data).toEqual([]);
     expect(listProducts(db, { q: 'Egg' }).data.map((p) => p.title)).toEqual(['Egg White']);
+  });
 
-    db.close();
+  it('finds a title containing a quote, because the term is bound not spliced', () => {
+    const db = seededProductsDb();
+    db.prepare('INSERT INTO products (id, title, price, category_id) VALUES (?, ?, ?, ?)').run(
+      9,
+      "Children's Talc",
+      4.25,
+      1
+    );
+
+    expect(listProducts(db, { q: "Children's" }).data.map((p) => p.title)).toEqual([
+      "Children's Talc",
+    ]);
+    expect(listProducts(db, { category: "beauty' OR '1'='1" }).data).toEqual([]);
   });
 });
 
 describe('getProduct', () => {
   /** A product with every column populated, plus the category name it joins to. */
   function detailedDb(): Db {
-    const db = temporaryDb();
+    const db = seededProductsDb();
     db.prepare(
       `INSERT INTO products
         (id, title, description, price, discount_percentage, rating, stock, brand, category_id, thumbnail, images_json)
@@ -215,28 +196,22 @@ describe('getProduct', () => {
       thumbnail: 'thumb-10.jpg',
       images: ['img-a.jpg', 'img-b.jpg'],
     });
-
-    db.close();
   });
 
   it('returns null for an unknown id', () => {
     const db = detailedDb();
 
     expect(getProduct(db, 9999)).toBeNull();
-
-    db.close();
   });
 
   it('defaults null description and images to empty values', () => {
-    const db = temporaryDb();
+    const db = seededProductsDb();
 
-    // temporaryDb inserts omit description and images_json entirely.
+    // seededProductsDb inserts omit description and images_json entirely.
     expect(getProduct(db, 1)).toMatchObject({
       description: '',
       images: [],
     });
-
-    db.close();
   });
 });
 
@@ -255,7 +230,7 @@ describe('parseProductId', () => {
 
 describe('seam integration', () => {
   it('feeds parsed params straight into listProducts', () => {
-    const db = temporaryDb();
+    const db = seededProductsDb();
     const parsed = parseProductListQuery({
       q: 'egg',
       category: 'groceries',
@@ -270,7 +245,6 @@ describe('seam integration', () => {
       expect(response.data.map((p) => p.title)).toEqual(['Egg White']);
       expect(response.meta).toEqual({ total: 1, page: 1, limit: 10, pageCount: 1 });
     }
-    db.close();
   });
 });
 
@@ -313,5 +287,22 @@ describe('parseProductListQuery', () => {
     expect(parseProductListQuery({ q: '' })).toEqual(noFilter);
     expect(parseProductListQuery({ category: '' })).toEqual(noFilter);
     expect(parseProductListQuery({ q: '', category: '' })).toEqual(noFilter);
+  });
+
+  it('rejects SQL fragments and non-slug values for every operator field', () => {
+    const injection = "'; DROP TABLE products; --";
+    for (const field of ['category', 'sortBy', 'order', 'page', 'limit']) {
+      const parsed = parseProductListQuery({ [field]: injection });
+      expect(parsed.ok, field).toBe(false);
+    }
+  });
+
+  it('accepts only the documented operators', () => {
+    for (const sortBy of ['name', 'price', 'rating']) {
+      expect(parseProductListQuery({ sortBy })).toMatchObject({ ok: true, params: { sortBy } });
+    }
+    for (const order of ['asc', 'desc']) {
+      expect(parseProductListQuery({ order })).toMatchObject({ ok: true, params: { order } });
+    }
   });
 });

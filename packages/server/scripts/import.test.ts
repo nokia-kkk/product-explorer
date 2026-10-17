@@ -1,25 +1,13 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createDatabase } from '../src/db';
 import { runImport } from './import';
 import { productSchema, categorySchema } from '../src/import';
+import { cleanupTemporaryState, temporaryDir } from '../src/testing';
 import type { z } from 'zod';
 
-const temporaryDirs: string[] = [];
-
-function temporaryDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'miniapp-import-cli-'));
-  temporaryDirs.push(dir);
-  return dir;
-}
-
-afterEach(() => {
-  while (temporaryDirs.length > 0) {
-    rmSync(temporaryDirs.pop()!, { recursive: true, force: true });
-  }
-});
+afterEach(cleanupTemporaryState);
 
 type Product = z.infer<typeof productSchema>;
 type Category = z.infer<typeof categorySchema>;
@@ -106,6 +94,70 @@ describe('runImport', () => {
     const db = createDatabase(offlineDbPath);
     expect(db.prepare('SELECT COUNT(*) AS count FROM products').get()).toEqual({ count: 1 });
     db.close();
+  });
+
+  it('rolls the import back and keeps the cache when the payload is invalid', async () => {
+    const root = temporaryDir();
+    const cacheDir = join(root, 'cache');
+    const dbPath = join(root, 'data', 'app.db');
+    const log = vi.fn();
+
+    await runImport({ cacheDir, dbPath, fetchJson: fakeFetch(), log });
+
+    // Stale rows the failing import would delete and never restore if it partly committed.
+    const seeded = createDatabase(dbPath);
+    seeded
+      .prepare('INSERT INTO categories (id, name, slug) VALUES (?, ?, ?)')
+      .run(42, 'Stale Category', 'stale-category');
+    seeded
+      .prepare('INSERT INTO products (id, title, price, category_id) VALUES (?, ?, ?, ?)')
+      .run(7, 'Stale Product', 1, 42);
+    seeded.close();
+
+    const duplicateProducts = [...products, { ...products[0], title: 'Duplicate Mascara' }];
+    const duplicateFetch = vi.fn((url: string) =>
+      Promise.resolve(
+        url === 'https://dummyjson.com/products?limit=0'
+          ? { products: duplicateProducts, total: duplicateProducts.length }
+          : categories
+      )
+    );
+
+    await expect(
+      runImport({ cacheDir, dbPath, fetchJson: duplicateFetch, refresh: true, log })
+    ).rejects.toThrow();
+
+    const db = createDatabase(dbPath);
+    expect(db.prepare('SELECT title FROM products WHERE id = 1').get()).toEqual({
+      title: 'Essence Mascara Lash Princess',
+    });
+    expect(db.prepare('SELECT title FROM products WHERE id = 7').get()).toEqual({
+      title: 'Stale Product',
+    });
+    expect(db.prepare('SELECT name FROM categories WHERE id = 42').get()).toEqual({
+      name: 'Stale Category',
+    });
+    expect(db.prepare('SELECT COUNT(*) AS count FROM products').get()).toEqual({ count: 2 });
+    db.close();
+
+    expect(JSON.parse(readFileSync(join(cacheDir, 'products.json'), 'utf8'))).toEqual({
+      products: duplicateProducts,
+      total: 2,
+    });
+  });
+
+  it('re-fetches when refresh is set, even though the cache exists', async () => {
+    const root = temporaryDir();
+    const cacheDir = join(root, 'cache');
+    const dbPath = join(root, 'data', 'app.db');
+    const log = vi.fn();
+
+    await runImport({ cacheDir, dbPath, fetchJson: fakeFetch(), log });
+
+    const refreshedFetch = fakeFetch();
+    await runImport({ cacheDir, dbPath, fetchJson: refreshedFetch, refresh: true, log });
+
+    expect(refreshedFetch).toHaveBeenCalledTimes(2);
   });
 
   it('fails and leaves the database untouched when there is no cache and no network', async () => {
