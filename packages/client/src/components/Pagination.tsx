@@ -35,11 +35,12 @@ function computePageNumbers(page: number, pageCount: number): (number | '…')[]
 }
 
 export default function Pagination({ page, pageCount, onPageChange }: PaginationProps) {
+  // Clamped rather than range-checked: `page` can be beyond the last page (an
+  // out-of-range URL), where Previous must still take you somewhere. Each button
+  // carries the state that disables the cases that would otherwise fall out.
   const goTo = useCallback(
     (target: number) => {
-      if (target >= 1 && target <= pageCount) {
-        onPageChange(target);
-      }
+      onPageChange(Math.min(Math.max(target, 1), pageCount));
     },
     [pageCount, onPageChange]
   );

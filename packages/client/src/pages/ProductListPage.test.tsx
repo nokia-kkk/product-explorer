@@ -160,6 +160,37 @@ describe('ProductListPage', () => {
     });
   });
 
+  it('does not refetch until typing pauses, then sends only the final term', async () => {
+    renderPage();
+
+    await waitFor(() => expect(productUrls.length).toBeGreaterThan(0));
+    const callsBeforeTyping = productUrls.length;
+    const box = screen.getByRole('searchbox', { name: 'Search products' });
+
+    // Three keystrokes inside the debounce window should not each fire a request.
+    fireEvent.change(box, { target: { value: 'm' } });
+    fireEvent.change(box, { target: { value: 'ma' } });
+    expect(productUrls.length).toBe(callsBeforeTyping);
+
+    fireEvent.change(box, { target: { value: 'mas' } });
+    expect(productUrls.length).toBe(callsBeforeTyping);
+
+    // Only once typing stops does a single request go out, for the full term.
+    await waitFor(
+      () => {
+        expect(productUrls.length).toBeGreaterThan(callsBeforeTyping);
+      },
+      { timeout: 2000 }
+    );
+
+    const requestedTerms = productUrls
+      .slice(callsBeforeTyping)
+      .map((url) => new URL(url, 'http://localhost').searchParams.get('q'));
+    expect(requestedTerms).toContain('mas');
+    expect(requestedTerms).not.toContain('m');
+    expect(requestedTerms).not.toContain('ma');
+  });
+
   it('debounces search input and resets page to 1', async () => {
     renderPage('/?page=2');
 
@@ -197,6 +228,7 @@ describe('ProductListPage', () => {
       expect(categoryUrl).toBeDefined();
     });
     expect(categoryUrl).toContain('category=beauty');
+    expect(categoryUrl).toContain('page=1');
     expect(categoryUrl).not.toContain('page=3');
   });
 
@@ -256,8 +288,31 @@ describe('ProductListPage', () => {
 
     const nav = screen.getByRole('navigation', { name: 'Product list pagination' });
     expect(within(nav).getByText('Page 999 of 10')).toBeInTheDocument();
-    expect(within(nav).getByRole('button', { name: 'Previous page' })).toBeEnabled();
     expect(within(nav).getByRole('button', { name: 'Next page' })).toBeDisabled();
+  });
+
+  it('lets Previous escape an out-of-range page', async () => {
+    productsResponse = productResponse([], { total: 120, page: 999, limit: 12, pageCount: 10 });
+    renderPage('/?page=999');
+
+    const nav = await screen.findByRole('navigation', { name: 'Product list pagination' });
+    const previous = within(nav).getByRole('button', { name: 'Previous page' });
+
+    // An out-of-range page has no valid predecessor, so Previous must not be an
+    // enabled control that silently does nothing when clicked.
+    expect(previous).toBeEnabled();
+
+    productsResponse = productResponse([productFixture()], {
+      total: 120,
+      page: 10,
+      limit: 12,
+      pageCount: 10,
+    });
+    fireEvent.click(previous);
+
+    await waitFor(() => {
+      expect(productUrls.some((url) => url.includes('page=10'))).toBe(true);
+    });
   });
 
   it('shows the page the URL asks for and swaps results when another page is picked', async () => {
