@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { join } from 'node:path';
 import Database from 'better-sqlite3';
-import { createDatabase, runMigrations, type Db } from './db';
-import { listCategories } from './categories';
-import { getProduct, listProducts } from './products';
-import { SQL_INJECTION, cleanupTemporaryState, temporaryDir, temporaryDb } from './testing';
+import { createDatabase, runMigrations, type Db } from './db.js';
+import { listCategories } from './categories.js';
+import { getProduct, listProducts } from './products.js';
+import { SQL_INJECTION, cleanupTemporaryState, temporaryDir, temporaryDb } from './testing.js';
 
 afterEach(cleanupTemporaryState);
 

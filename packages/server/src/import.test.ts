@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { importProducts } from './import';
-import { cleanupTemporaryState, temporaryDb } from './testing';
+import { importProducts } from './import.js';
+import { cleanupTemporaryState, temporaryDb } from './testing.js';
 
 afterEach(cleanupTemporaryState);
 

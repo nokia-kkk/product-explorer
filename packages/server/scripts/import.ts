@@ -3,9 +3,9 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import { z } from 'zod';
-import { importProducts, categorySchema, productSchema } from '../src/import';
-import { createDatabase } from '../src/db';
-import type { ImportPayload, ImportSummary } from '../src/import';
+import { importProducts, categorySchema, productSchema } from '../src/import.js';
+import { createDatabase } from '../src/db.js';
+import type { ImportPayload, ImportSummary } from '../src/import.js';
 
 const CACHE_FILENAME = {
   products: 'products.json',

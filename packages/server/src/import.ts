@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Db } from './db';
+import type { Db } from './db.js';
 
 export const categorySchema = z.object({
   slug: z.string().min(1),

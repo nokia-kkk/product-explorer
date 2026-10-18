@@ -1,9 +1,11 @@
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Express } from 'express';
 import request from 'supertest';
-import type { Db } from './db';
-import { createApp } from './index';
-import { cleanupTemporaryState, seedCatalog, temporaryDb } from './testing';
+import type { Db } from './db.js';
+import { createApp } from './index.js';
+import { cleanupTemporaryState, seedCatalog, temporaryDb, temporaryDir } from './testing.js';
 
 let db: Db;
 let app: Express;
@@ -97,5 +99,45 @@ describe('GET /api/categories', () => {
       ],
       meta: { total: 3 },
     });
+  });
+});
+
+describe('production static hosting', () => {
+  let clientDir: string;
+
+  beforeEach(() => {
+    clientDir = temporaryDir('miniapp-client-');
+    writeFileSync(join(clientDir, 'index.html'), '<!doctype html><title>MiniApp</title>');
+    writeFileSync(join(clientDir, 'app.js'), 'console.log("built")');
+  });
+
+  it('serves the built index.html at the site root', async () => {
+    const response = await request(createApp(db, clientDir)).get('/').expect(200);
+    expect(response.text).toContain('<title>MiniApp</title>');
+  });
+
+  it('serves built assets', async () => {
+    const response = await request(createApp(db, clientDir)).get('/app.js').expect(200);
+    expect(response.text).toBe('console.log("built")');
+  });
+
+  it('falls back to index.html so client routes deep-link and reload', async () => {
+    const response = await request(createApp(db, clientDir)).get('/products/7').expect(200);
+    expect(response.text).toContain('<title>MiniApp</title>');
+  });
+
+  it('still answers unknown API routes with JSON, not the app shell', async () => {
+    for (const path of ['/api/nope', '/api', '/API/nope', '/api/products/7/extra']) {
+      const response = await request(createApp(db, clientDir)).get(path).expect(404);
+      expect(response.body).toEqual({ error: 'Not found' });
+    }
+  });
+
+  it('answers a missing asset with 404 rather than the shell, which would fail as HTML', async () => {
+    await request(createApp(db, clientDir)).get('/assets/gone.js').expect(404);
+  });
+
+  it('serves only the API when no client directory is configured', async () => {
+    await request(createApp(db)).get('/').expect(404);
   });
 });

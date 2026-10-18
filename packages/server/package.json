@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "import": "tsx scripts/import.ts",
-    "typecheck": "tsc -p . && tsc -p scripts",
+    "typecheck": "tsc -p . --noEmit && tsc -p scripts --noEmit",
     "test": "vitest run",
     "lint": "eslint ."
   },

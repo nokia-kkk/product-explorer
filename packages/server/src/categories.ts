@@ -1,4 +1,4 @@
-import type { Db } from './db';
+import type { Db } from './db.js';
 import type { CategoryListResponse } from '@miniapp/shared';
 
 export function listCategories(db: Db): CategoryListResponse {

@@ -1,13 +1,17 @@
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import express, { type Express } from 'express';
+import express, { type Express, type RequestHandler } from 'express';
 import cors from 'cors';
-import { createDatabase, type Db } from './db';
-import { listCategories } from './categories';
-import { getProduct, listProducts, parseProductId, parseProductListQuery } from './products';
+import { createDatabase, type Db } from './db.js';
+import { listCategories } from './categories.js';
+import { getProduct, listProducts, parseProductId, parseProductListQuery } from './products.js';
 
-export function createApp(db: Db): Express {
+/**
+ * @param clientDir Directory of the built client to serve. Omitted in dev, where
+ * Vite serves the client and this process is only the API.
+ */
+export function createApp(db: Db, clientDir?: string): Express {
   const app = express();
 
   app.use(cors());
@@ -45,7 +49,40 @@ export function createApp(db: Db): Express {
     res.json({ data: product });
   });
 
+  if (clientDir) {
+    app.use(serveClient(clientDir));
+  }
+
   return app;
+}
+
+/**
+ * Serves the built client, then falls back to its index.html so client routes
+ * survive a deep link or a reload.
+ *
+ * Requests that are not client routes are answered directly instead: an API path
+ * (Express routes case-insensitively, so this is too) returns JSON, and a
+ * missing asset returns 404. Both would otherwise get HTML with a 200, which
+ * says nothing useful to a fetch expecting JSON or a browser expecting a script.
+ */
+function serveClient(clientDir: string): RequestHandler {
+  const indexPath = resolve(clientDir, 'index.html');
+  const hasExtension = /\.[^/]+$/;
+
+  return (req, res, next) => {
+    express.static(clientDir)(req, res, (error) => {
+      if (error) {
+        next(error);
+        return;
+      }
+      const isApiPath = /^\/api(\/|$)/i.test(req.path);
+      if (isApiPath || hasExtension.test(req.path)) {
+        res.status(404).json({ error: 'Not found' });
+        return;
+      }
+      res.sendFile(indexPath, (sendError) => (sendError ? next(sendError) : undefined));
+    });
+  };
 }
 
 function main(): void {
@@ -55,9 +92,17 @@ function main(): void {
     : fileURLToPath(new URL('../../../data/app.db', import.meta.url));
 
   mkdirSync(dirname(databasePath), { recursive: true });
-  createApp(createDatabase(databasePath)).listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+
+  // dist/index.js → ../../client/dist. Absent when only the API is deployed;
+  // existsSync guards that rather than leaving a broken static handler.
+  const clientDir = fileURLToPath(new URL('../../client/dist', import.meta.url));
+
+  createApp(createDatabase(databasePath), existsSync(clientDir) ? clientDir : undefined).listen(
+    PORT,
+    () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    }
+  );
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

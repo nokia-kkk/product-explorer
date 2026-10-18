@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createDatabase, type Db } from './db';
+import { createDatabase, type Db } from './db.js';
 
 const temporaryDirs: string[] = [];
 const openDbs: Db[] = [];

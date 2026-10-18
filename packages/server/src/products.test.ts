@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import type { Db } from './db';
-import { getProduct, listProducts, parseProductId, parseProductListQuery } from './products';
-import { cleanupTemporaryState, temporaryDb } from './testing';
+import type { Db } from './db.js';
+import { getProduct, listProducts, parseProductId, parseProductListQuery } from './products.js';
+import { cleanupTemporaryState, temporaryDb } from './testing.js';
 
 afterEach(cleanupTemporaryState);
 

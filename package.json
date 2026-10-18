@@ -8,11 +8,12 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=packages/server\" \"npm run dev --workspace=packages/client\"",
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspace=packages/shared && npm run build --workspace=packages/client --workspace=packages/server",
+    "start": "npm run start --workspace=packages/server",
     "test": "npm run test --workspaces",
     "import": "npm run import --workspace=packages/server",
     "lint": "eslint .",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run build --workspace=packages/shared && npm run typecheck --workspaces --if-present"
   },
   "devDependencies": {
     "concurrently": "^9.0.1",

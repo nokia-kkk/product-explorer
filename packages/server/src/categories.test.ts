@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import type { Db } from './db';
-import { listCategories } from './categories';
-import { cleanupTemporaryState, seedCatalog, temporaryDb } from './testing';
+import type { Db } from './db.js';
+import { listCategories } from './categories.js';
+import { cleanupTemporaryState, seedCatalog, temporaryDb } from './testing.js';
 
 let db: Db;
 

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Db } from './db';
+import type { Db } from './db.js';
 import type { Product, ProductListResponse } from '@miniapp/shared';
 
 export type ProductListParams = Partial<ParsedProductListQuery>;

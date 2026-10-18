@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { createDatabase } from '../src/db';
-import { runImport } from './import';
-import { productSchema, categorySchema } from '../src/import';
-import { cleanupTemporaryState, temporaryDir } from '../src/testing';
+import { createDatabase } from '../src/db.js';
+import { runImport } from './import.js';
+import { productSchema, categorySchema } from '../src/import.js';
+import { cleanupTemporaryState, temporaryDir } from '../src/testing.js';
 import type { z } from 'zod';
 
 afterEach(cleanupTemporaryState);
