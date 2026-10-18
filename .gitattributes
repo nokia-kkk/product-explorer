@@ -1,1 +1,8 @@
+# Normalize everything to LF in the repo, so lint/prettier behave the same on
+# every machine (Windows checkouts used to arrive as CRLF and fail `npm run lint`).
 * text=auto eol=lf
+
+# Windows batch files are the exception: cmd.exe needs CRLF. `-text` keeps Git
+# from converting them at all.
+*.bat -text
+*.cmd -text
