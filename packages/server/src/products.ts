@@ -1,6 +1,14 @@
 import { z } from 'zod';
 import type { Db } from './db.js';
-import type { Product, ProductListResponse } from '@miniapp/shared';
+import {
+  PRODUCT_LIST_MAX_LIMIT,
+  PRODUCT_SORT_FIELDS,
+  SORT_ORDERS,
+  type Product,
+  type ProductListResponse,
+  type ProductSortField,
+  type SortOrder,
+} from '@miniapp/shared';
 
 export type ProductListParams = Partial<ParsedProductListQuery>;
 
@@ -9,8 +17,8 @@ const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export type ParsedProductListQuery = {
   q?: string;
   category?: string;
-  sortBy: 'name' | 'price' | 'rating';
-  order: 'asc' | 'desc';
+  sortBy: ProductSortField;
+  order: SortOrder;
   page: number;
   limit: number;
 };
@@ -25,10 +33,10 @@ export const DEFAULT_QUERY = {
 const querySchema = z.object({
   q: z.string().max(200).optional(),
   category: z.string().regex(slugPattern).max(120).optional(),
-  sortBy: z.enum(['name', 'price', 'rating']).optional(),
-  order: z.enum(['asc', 'desc']).optional(),
+  sortBy: z.enum(PRODUCT_SORT_FIELDS).optional(),
+  order: z.enum(SORT_ORDERS).optional(),
   page: z.coerce.number().int().min(1).optional(),
-  limit: z.coerce.number().int().min(1).max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(PRODUCT_LIST_MAX_LIMIT).optional(),
 });
 
 export type ParseResult =

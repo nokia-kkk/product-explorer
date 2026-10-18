@@ -2,8 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-import App from './App';
-import type { CategoryListResponse, ProductDetailResponse, ProductListResponse } from './types';
+import { App } from './App';
+import type {
+  CategoryListResponse,
+  ProductDetailResponse,
+  ProductListResponse,
+} from '@miniapp/shared';
 
 function stubApiFetch() {
   const productsResponse: ProductListResponse = {
@@ -92,7 +96,9 @@ describe('App', () => {
       'href',
       '/categories'
     );
-    expect(within(header).getByRole('searchbox', { name: 'Search products' })).toBeInTheDocument();
+    expect(
+      within(header).getByRole('searchbox', { name: 'Search all products' })
+    ).toBeInTheDocument();
 
     await screen.findByTestId('product-price');
     expect(screen.getByText('Essence Mascara Lash Princess')).toBeInTheDocument();
@@ -126,11 +132,13 @@ describe('App', () => {
   it('hides the header search input on non-listing routes', () => {
     renderApp(['/categories']);
 
-    expect(screen.queryByRole('searchbox', { name: 'Search products' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('searchbox', { name: 'Search all products' })
+    ).not.toBeInTheDocument();
   });
 
   it('toggles the mobile navigation drawer', () => {
-    renderApp(['/']);
+    renderApp();
 
     const toggle = screen.getByRole('button', { name: 'Toggle navigation menu' });
     expect(screen.queryByRole('navigation', { name: 'Mobile' })).not.toBeInTheDocument();
@@ -147,10 +155,8 @@ describe('App', () => {
   it('navigates from a product card to that product', async () => {
     renderApp();
 
-    const card = await screen.findByTestId('product-price');
-    const links = within(card.closest('article')!).getAllByRole('link', {
-      name: 'Essence Mascara Lash Princess',
-    });
+    await screen.findByTestId('product-price');
+    const links = screen.getAllByRole('link', { name: 'Essence Mascara Lash Princess' });
     fireEvent.click(links[0]);
 
     expect(await screen.findByText('A volumising mascara.')).toBeInTheDocument();
@@ -181,7 +187,7 @@ describe('App', () => {
     requestedUrls.length = 0;
 
     const header = screen.getByRole('banner');
-    fireEvent.change(within(header).getByRole('searchbox', { name: 'Search products' }), {
+    fireEvent.change(within(header).getByRole('searchbox', { name: 'Search all products' }), {
       target: { value: '  mascara  ' },
     });
     fireEvent.submit(within(header).getByRole('search'));

@@ -1,24 +1,25 @@
-import type { CategoryWithCount } from '@shared/types';
+import type { CategoryWithCount } from '@miniapp/shared';
 import { Link } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
 
 type CategoryCardProps = {
   category: CategoryWithCount;
 };
 
-export default function CategoryCard({ category }: CategoryCardProps) {
+export function CategoryCard({ category }: CategoryCardProps) {
   const count = category.productCount;
 
   return (
-    <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+    <Card className="rounded-lg p-4 shadow-sm transition-shadow hover:shadow-md">
       <Link
         to={`/categories/${category.slug}`}
-        className="flex flex-col gap-1 text-gray-900 hover:underline"
+        className="flex flex-col gap-1 text-foreground hover:underline"
       >
         <span className="text-base font-medium capitalize">{category.name}</span>
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-muted-foreground">
           {count} {count === 1 ? 'product' : 'products'}
         </span>
       </Link>
-    </article>
+    </Card>
   );
 }

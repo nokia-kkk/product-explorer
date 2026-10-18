@@ -1,9 +1,10 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import CategoryDetailPage from './CategoryDetailPage';
-import type { CategoryListResponse, ProductListResponse } from '../types';
+import { CategoryDetailPage } from './CategoryDetailPage';
+import { selectOption } from '../test/selectOption';
+import type { CategoryListResponse, ProductListResponse } from '@miniapp/shared';
 
 type Product = ProductListResponse['data'][number];
 
@@ -110,9 +111,7 @@ describe('CategoryDetailPage', () => {
 
     await screen.findByTestId('product-price');
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Sort products' }), {
-      target: { value: 'price:asc' },
-    });
+    await selectOption('Sort products', 'Price low-high');
 
     await waitFor(() => {
       expect(

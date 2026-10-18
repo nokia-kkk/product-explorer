@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import ProductImage from './ProductImage';
+import { ProductImage } from './ProductImage';
 
 describe('ProductImage', () => {
   it('renders the product image when the src loads', () => {

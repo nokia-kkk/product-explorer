@@ -1,11 +1,11 @@
 import { Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout';
-import ProductListPage from './pages/ProductListPage';
-import ProductDetailPage from './pages/ProductDetailPage';
-import CategoryListPage from './pages/CategoryListPage';
-import CategoryDetailPage from './pages/CategoryDetailPage';
+import { Layout } from './Layout';
+import { ProductListPage } from '../pages/ProductListPage';
+import { ProductDetailPage } from '../pages/ProductDetailPage';
+import { CategoryListPage } from '../pages/CategoryListPage';
+import { CategoryDetailPage } from '../pages/CategoryDetailPage';
 
-function App() {
+export function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -17,5 +17,3 @@ function App() {
     </Routes>
   );
 }
-
-export default App;

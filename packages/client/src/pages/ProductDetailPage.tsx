@@ -1,122 +1,106 @@
 import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import type { ProductDetailResponse } from '@shared/types';
-import { fetchProduct, ProductNotFoundError } from '../lib/api';
-import { currency, discountedPrice } from '../lib/format';
-import ProductGallery from '../components/ProductGallery';
-import StarIcon from '../components/StarIcon';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ProductNotFoundError } from '../features/products/api/products';
+import { useProduct } from '../features/products/hooks/useProduct';
+import { ProductDetailSkeleton } from '../features/products/components/ProductDetailSkeleton';
+import { ProductGallery } from '../features/products/components/ProductGallery';
+import { StarIcon } from '../features/products/components/StarIcon';
+import { currency, discountedPrice } from '../shared/lib/format';
 
 const backLink = (
-  <Link to="/" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+  <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-foreground">
     ← Back to products
   </Link>
 );
 
-export default function ProductDetailPage() {
+export function ProductDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
+  const product = useProduct(id);
 
-  const productQuery = useQuery<ProductDetailResponse>({
-    queryKey: ['product', id],
-    queryFn: () => fetchProduct(id),
-  });
-
-  const product = productQuery.data?.data;
-  const discounted = product ? discountedPrice(product) : null;
+  const discounted = product.data ? discountedPrice(product.data) : null;
 
   return (
     <section className="flex flex-col gap-6">
       {backLink}
 
-      {productQuery.isPending && (
-        <div
-          data-testid="product-detail-skeleton"
-          aria-busy="true"
-          aria-label="Loading product"
-          className="grid gap-8 md:grid-cols-2"
-        >
-          <div className="aspect-square w-full animate-pulse rounded-lg bg-gray-200" />
-          <div className="flex flex-col gap-3">
-            <div className="h-6 w-3/4 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-1/3 animate-pulse rounded bg-gray-200" />
-            <div className="h-8 w-1/4 animate-pulse rounded bg-gray-200" />
-            <div className="h-24 w-full animate-pulse rounded bg-gray-200" />
-          </div>
-        </div>
-      )}
+      {product.isLoading && <ProductDetailSkeleton />}
 
-      {productQuery.isError &&
-        (productQuery.error instanceof ProductNotFoundError ? (
+      {product.isError &&
+        (product.error instanceof ProductNotFoundError ? (
           <div
             data-testid="product-not-found"
-            className="flex flex-col items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-16 text-center"
+            className="flex flex-col items-center gap-2 rounded-lg border bg-card px-4 py-16 text-center"
           >
-            <h1 className="text-lg font-semibold text-gray-900">Product not found</h1>
-            <p className="text-sm text-gray-600">
+            <h1 className="text-lg font-semibold text-foreground">Product not found</h1>
+            <p className="text-sm text-muted-foreground">
               This product does not exist or is no longer available.
             </p>
           </div>
         ) : (
           <div
             role="alert"
-            className="flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            className="flex items-center justify-between rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
           >
             <span>Failed to load product. Please try again.</span>
-            <button
+            <Button
               type="button"
-              className="rounded-md border border-red-300 bg-white px-3 py-1 text-red-700 hover:bg-red-100"
-              onClick={() => productQuery.refetch()}
+              variant="outline"
+              size="sm"
+              className="border-destructive/40 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => product.refetch()}
             >
               Retry
-            </button>
+            </Button>
           </div>
         ))}
 
-      {product && (
+      {product.data && (
         <div className="grid gap-8 md:grid-cols-2">
           <ProductGallery
-            key={product.id}
-            title={product.title}
-            thumbnail={product.thumbnail}
-            images={product.images}
+            key={product.data.id}
+            title={product.data.title}
+            thumbnail={product.data.thumbnail}
+            images={product.data.images}
           />
 
           <div className="flex flex-col gap-4">
-            <span className="w-fit rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600">
-              {product.category}
-            </span>
+            <Badge variant="secondary" className="w-fit capitalize">
+              {product.data.category}
+            </Badge>
 
-            <h1 className="text-2xl font-semibold text-gray-900">{product.title}</h1>
+            <h1 className="text-2xl font-semibold text-foreground">{product.data.title}</h1>
 
             <span
-              className="flex items-center gap-1 text-sm text-gray-600"
+              className="flex items-center gap-1 text-sm text-muted-foreground"
               data-testid="product-rating"
             >
               <StarIcon className="h-4 w-4 text-yellow-500" />
-              <span aria-label={`Rating: ${product.rating.toFixed(1)} out of 5`}>
-                {product.rating.toFixed(1)}
+              <span aria-label={`Rating: ${product.data.rating.toFixed(1)} out of 5`}>
+                {product.data.rating.toFixed(1)}
               </span>
             </span>
 
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-semibold text-gray-900" data-testid="product-price">
-                {currency.format(discounted ?? product.price)}
+              <span className="text-2xl font-semibold text-foreground" data-testid="product-price">
+                {currency.format(discounted ?? product.data.price)}
               </span>
               {discounted !== null && (
                 <>
                   <span
                     data-testid="product-price-original"
-                    className="text-sm text-gray-400 line-through"
+                    className="text-sm text-muted-foreground line-through"
                   >
-                    {currency.format(product.price)}
+                    {currency.format(product.data.price)}
                   </span>
-                  <span className="rounded bg-green-100 px-1.5 text-xs font-medium text-green-700">
-                    -{Math.round(product.discountPercentage)}%
-                  </span>
+                  <Badge className="border-transparent bg-green-100 text-xs text-green-700">
+                    -{Math.round(product.data.discountPercentage)}%
+                  </Badge>
                 </>
               )}
             </div>
 
-            {product.stock === 0 ? (
+            {product.data.stock === 0 ? (
               <span
                 data-testid="out-of-stock-badge"
                 className="w-fit rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-700"
@@ -128,17 +112,19 @@ export default function ProductDetailPage() {
                 data-testid="product-stock"
                 className="w-fit rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700"
               >
-                In stock ({product.stock} available)
+                In stock ({product.data.stock} available)
               </span>
             )}
 
-            {product.brand && (
-              <p className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Brand:</span> {product.brand}
+            {product.data.brand && (
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">Brand:</span> {product.data.brand}
               </p>
             )}
 
-            <p className="text-sm leading-relaxed text-gray-700">{product.description}</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {product.data.description}
+            </p>
           </div>
         </div>
       )}

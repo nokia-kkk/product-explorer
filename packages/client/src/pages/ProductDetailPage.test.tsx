@@ -2,8 +2,8 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import ProductDetailPage from './ProductDetailPage';
-import type { ProductDetailResponse } from '../types';
+import { ProductDetailPage } from './ProductDetailPage';
+import type { ProductDetailResponse } from '@miniapp/shared';
 
 const product: ProductDetailResponse['data'] = {
   id: 10,

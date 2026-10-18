@@ -18,7 +18,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@shared/types": ["../shared/src/index.ts"]
+      "@miniapp/shared": ["../shared/src/index.ts"]
     }
   },
   "include": ["src"],

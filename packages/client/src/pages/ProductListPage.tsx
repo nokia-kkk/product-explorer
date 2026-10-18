@@ -1,5 +1,6 @@
-import ProductList from '../components/ProductList';
+import { ProductBrowser } from '../features/products/components/ProductBrowser';
 
-export default function ProductListPage() {
-  return <ProductList title="Products" />;
+/** Route-level only: the browser owns the params, data and layout below it. */
+export function ProductListPage() {
+  return <ProductBrowser title="Products" />;
 }

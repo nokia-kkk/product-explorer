@@ -1,30 +1,31 @@
 import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import type { CategoryListResponse } from '@shared/types';
-import { fetchCategories } from '../lib/api';
-import ProductList from '../components/ProductList';
+import { useCategories } from '../features/categories/hooks/useCategories';
+import { ProductBrowser } from '../features/products/components/ProductBrowser';
 
 function Breadcrumb({ name }: { name: string }) {
   return (
     <nav aria-label="Breadcrumb" className="text-sm">
       <ol className="flex items-center gap-2">
         <li>
-          <Link to="/" className="text-gray-600 hover:text-gray-900 hover:underline">
+          <Link to="/" className="text-muted-foreground hover:text-foreground hover:underline">
             Home
           </Link>
         </li>
-        <li aria-hidden="true" className="text-gray-400">
+        <li aria-hidden="true" className="text-muted-foreground">
           /
         </li>
         <li>
-          <Link to="/categories" className="text-gray-600 hover:text-gray-900 hover:underline">
+          <Link
+            to="/categories"
+            className="text-muted-foreground hover:text-foreground hover:underline"
+          >
             Categories
           </Link>
         </li>
-        <li aria-hidden="true" className="text-gray-400">
+        <li aria-hidden="true" className="text-muted-foreground">
           /
         </li>
-        <li aria-current="page" className="font-medium capitalize text-gray-900">
+        <li aria-current="page" className="font-medium capitalize text-foreground">
           {name}
         </li>
       </ol>
@@ -32,21 +33,18 @@ function Breadcrumb({ name }: { name: string }) {
   );
 }
 
-export default function CategoryDetailPage() {
+export function CategoryDetailPage() {
   const { slug = '' } = useParams<{ slug: string }>();
 
   // Used for the page title and breadcrumb only; the listing itself is filtered
   // by the slug from the path.
-  const categoriesQuery = useQuery<CategoryListResponse>({
-    queryKey: ['categories'],
-    queryFn: fetchCategories,
-  });
-  const name = categoriesQuery.data?.data.find((c) => c.slug === slug)?.name ?? slug;
+  const categories = useCategories();
+  const name = categories.data.find((c) => c.slug === slug)?.name ?? slug;
 
   return (
     <div className="flex flex-col gap-6">
       <Breadcrumb name={name} />
-      <ProductList title={name} lockedCategory={slug} />
+      <ProductBrowser title={name} lockedCategory={slug} />
     </div>
   );
 }

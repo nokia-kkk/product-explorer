@@ -2,8 +2,8 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-import CategoryListPage from './CategoryListPage';
-import type { CategoryListResponse } from '../types';
+import { CategoryListPage } from './CategoryListPage';
+import type { CategoryListResponse } from '@miniapp/shared';
 
 const categoriesFixture: CategoryListResponse = {
   data: [

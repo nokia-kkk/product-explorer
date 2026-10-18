@@ -2,8 +2,9 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
-import ProductListPage from './ProductListPage';
-import type { CategoryListResponse, ProductListResponse } from '../types';
+import { ProductListPage } from './ProductListPage';
+import { selectOption } from '../test/selectOption';
+import type { CategoryListResponse, ProductListResponse } from '@miniapp/shared';
 
 type Product = ProductListResponse['data'][number];
 
@@ -124,9 +125,7 @@ describe('ProductListPage', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
     // A new failed request (fresh query) shows the banner again.
-    fireEvent.change(screen.getByRole('combobox', { name: 'Sort products' }), {
-      target: { value: 'price:asc' },
-    });
+    await selectOption('Sort products', 'Price low-high');
     await screen.findByRole('alert');
   });
 
@@ -217,10 +216,8 @@ describe('ProductListPage', () => {
   it('resets page to 1 when the category changes', async () => {
     renderPage('/?page=3');
 
-    await screen.findByRole('option', { name: 'Beauty' });
-    const select = screen.getByRole('combobox', { name: 'Filter by category' });
-
-    fireEvent.change(select, { target: { value: 'beauty' } });
+    await screen.findByTestId('product-price');
+    await selectOption('Filter by category', 'Beauty');
 
     let categoryUrl: string | undefined;
     await waitFor(() => {
@@ -235,16 +232,14 @@ describe('ProductListPage', () => {
   it('supports all sort options', async () => {
     renderPage();
 
-    const sort = await screen.findByRole('combobox', { name: 'Sort products' });
+    await screen.findByTestId('product-price');
 
-    fireEvent.change(sort, { target: { value: 'price:asc' } });
+    await selectOption('Sort products', 'Price low-high');
     await waitFor(() => {
       expect(productUrls.some((url) => url.includes('sortBy=price&order=asc'))).toBe(true);
     });
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Sort products' }), {
-      target: { value: 'rating:desc' },
-    });
+    await selectOption('Sort products', 'Rating high-low');
     await waitFor(() => {
       expect(productUrls.some((url) => url.includes('sortBy=rating&order=desc'))).toBe(true);
     });

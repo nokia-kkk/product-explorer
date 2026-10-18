@@ -5,9 +5,9 @@ const PLACEHOLDER_SVG = (
     aria-hidden="true"
     data-testid="product-image-placeholder"
     viewBox="0 0 100 100"
-    className="h-full w-full text-gray-300"
+    className="h-full w-full text-muted"
   >
-    <rect width="100" height="100" fill="#f3f4f6" />
+    <rect width="100" height="100" fill="hsl(var(--muted))" />
     <circle cx="38" cy="36" r="12" fill="currentColor" />
     <path d="M18 78 L44 50 L60 66 L74 54 L84 78 Z" fill="currentColor" />
   </svg>
@@ -20,12 +20,8 @@ type ProductImageProps = {
   'data-testid'?: string;
 };
 
-export default function ProductImage({
-  src,
-  alt,
-  className,
-  'data-testid': testId,
-}: ProductImageProps) {
+/** A product image that falls back to a placeholder when `src` is missing or fails to load. */
+export function ProductImage({ src, alt, className, 'data-testid': testId }: ProductImageProps) {
   const [failed, setFailed] = useState(false);
 
   if (!src || failed) {

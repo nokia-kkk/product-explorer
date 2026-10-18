@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: [
-      { find: '@shared/types', replacement: path.resolve(__dirname, '../shared/src/index.ts') },
+      { find: '@miniapp/shared', replacement: path.resolve(__dirname, '../shared/src/index.ts') },
       { find: '@', replacement: path.resolve(__dirname, './src') },
     ],
   },

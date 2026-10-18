@@ -1,12 +1,12 @@
-import type {
-  CategoryListResponse,
-  ProductDetailResponse,
-  ProductListResponse,
-} from '@shared/types';
+import type { ProductDetailResponse, ProductListResponse } from '@miniapp/shared';
 
-/** A response meaning the product does not exist — malformed id (400) or unknown id (404). */
+/**
+ * A response meaning the product does not exist — malformed id (400) or unknown
+ * id (404). Distinct from a transport failure because it is not retryable.
+ */
 export class ProductNotFoundError extends Error {}
 
+/** The product list request. Every field is optional; the server applies its defaults. */
 export type ProductListQuery = {
   q?: string;
   category?: string;
@@ -34,14 +34,6 @@ export async function fetchProducts(query: ProductListQuery): Promise<ProductLis
     throw new Error(`Failed to load products (${response.status})`);
   }
   return (await response.json()) as ProductListResponse;
-}
-
-export async function fetchCategories(): Promise<CategoryListResponse> {
-  const response = await fetch('/api/categories');
-  if (!response.ok) {
-    throw new Error(`Failed to load categories (${response.status})`);
-  }
-  return (await response.json()) as CategoryListResponse;
 }
 
 export async function fetchProduct(id: string): Promise<ProductDetailResponse> {

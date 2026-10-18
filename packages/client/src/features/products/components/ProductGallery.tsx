@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import ProductImage from './ProductImage';
+import { cn } from '@/lib/utils';
+import { ProductImage } from './ProductImage';
 
 type ProductGalleryProps = {
   title: string;
@@ -7,7 +8,7 @@ type ProductGalleryProps = {
   images: string[];
 };
 
-export default function ProductGallery({ title, thumbnail, images }: ProductGalleryProps) {
+export function ProductGallery({ title, thumbnail, images }: ProductGalleryProps) {
   const gallery = images.length > 0 ? images : [thumbnail];
   const [selected, setSelected] = useState(0);
   // `selected` is only ever set from this array's indices, so it is always in range.
@@ -19,7 +20,7 @@ export default function ProductGallery({ title, thumbnail, images }: ProductGall
         src={active}
         alt={title}
         data-testid="main-image"
-        className="aspect-square w-full rounded-lg border border-gray-200 bg-gray-100 object-cover"
+        className="aspect-square w-full rounded-lg border bg-muted object-cover"
       />
 
       {gallery.length > 1 && (
@@ -34,12 +35,12 @@ export default function ProductGallery({ title, thumbnail, images }: ProductGall
                 aria-label={`View image ${index + 1}`}
                 aria-current={index === selected ? 'true' : undefined}
                 onClick={() => setSelected(index)}
-                className={[
-                  'block h-16 w-16 overflow-hidden rounded-md border bg-gray-100',
+                className={cn(
+                  'block h-16 w-16 overflow-hidden rounded-md border bg-muted',
                   index === selected
-                    ? 'border-gray-900 ring-2 ring-gray-900'
-                    : 'border-gray-200 hover:border-gray-400',
-                ].join(' ')}
+                    ? 'border-foreground ring-2 ring-foreground'
+                    : 'hover:border-muted-foreground'
+                )}
               >
                 <ProductImage
                   src={image}

@@ -3,11 +3,15 @@ import { render, screen } from '@testing-library/react';
 import { axe } from 'vitest-axe';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-import App from './App';
-import ProductCard from './components/ProductCard';
-import Pagination from './components/Pagination';
-import ProductImage from './components/ProductImage';
-import type { CategoryListResponse, ProductListResponse, ProductDetailResponse } from './types';
+import { App } from './app/App';
+import { ProductCard } from './features/products/components/ProductCard';
+import { Pagination } from './features/products/components/Pagination';
+import { ProductImage } from './features/products/components/ProductImage';
+import type {
+  CategoryListResponse,
+  ProductListResponse,
+  ProductDetailResponse,
+} from '@miniapp/shared';
 
 type Product = ProductListResponse['data'][number];
 
