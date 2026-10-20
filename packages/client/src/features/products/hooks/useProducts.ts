@@ -9,6 +9,8 @@ export type UseProductsResult = {
   data: ProductListItem[];
   meta: ProductListMeta | undefined;
   isLoading: boolean;
+  /** A request is in flight, including a page change that keeps the old data on screen. */
+  isFetching: boolean;
   isError: boolean;
   error: Error | null;
   refetch: () => void;
@@ -29,6 +31,7 @@ export function useProducts(query: ProductListQuery): UseProductsResult {
     data: result.data?.data ?? [],
     meta: result.data?.meta,
     isLoading: result.isPending,
+    isFetching: result.isFetching,
     isError: result.isError,
     error: result.error ?? null,
     refetch: result.refetch,

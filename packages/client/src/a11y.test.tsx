@@ -24,6 +24,7 @@ const product: Product = {
   thumbnail: 'https://cdn.dummyjson.com/mascara.webp',
   brand: 'Essence',
   category: 'beauty',
+  categorySlug: 'beauty',
 };
 
 const productsResponse: ProductListResponse = {

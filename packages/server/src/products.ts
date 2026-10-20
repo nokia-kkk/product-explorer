@@ -112,7 +112,8 @@ export function listProducts(db: Db, params: ProductListParams): ProductListResp
         p.rating,
         p.thumbnail,
         p.brand,
-        c.name AS category
+        c.name AS category,
+        c.slug AS categorySlug
       FROM products p
       JOIN categories c ON c.id = p.category_id
       ${where}

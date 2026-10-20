@@ -17,6 +17,7 @@ const productFixture = (overrides: Partial<Product> = {}): Product => ({
   thumbnail: 'https://cdn.dummyjson.com/mascara.webp',
   brand: 'Essence',
   category: 'beauty',
+  categorySlug: 'beauty',
   ...overrides,
 });
 
@@ -103,6 +104,21 @@ describe('ProductListPage', () => {
     expect(screen.getByText('Essence Mascara Lash Princess')).toBeInTheDocument();
     expect(screen.getByText('beauty')).toBeInTheDocument();
     expect(screen.getByTestId('product-discount')).toHaveTextContent('-7%');
+  });
+
+  it('links each card category badge to that category listing', async () => {
+    renderPage();
+
+    await screen.findByTestId('product-price');
+
+    const badge = screen.getByRole('link', { name: 'Browse beauty' });
+    expect(badge).toHaveAttribute('href', '/categories/beauty');
+    expect(badge).toHaveTextContent('beauty');
+    // The card itself still links to the product.
+    expect(screen.getByRole('link', { name: 'Essence Mascara Lash Princess' })).toHaveAttribute(
+      'href',
+      '/products/1'
+    );
   });
 
   it('shows 8 skeleton cards while loading', () => {
@@ -261,6 +277,55 @@ describe('ProductListPage', () => {
     expect(within(nav).getByText('Page 1 of 5')).toBeInTheDocument();
     expect(within(nav).getByRole('button', { name: 'Previous page' })).toBeDisabled();
     expect(within(nav).getByRole('button', { name: 'Next page' })).toBeEnabled();
+  });
+
+  it('shows a loading status while the next page is being fetched', async () => {
+    renderPage();
+
+    await screen.findByTestId('product-price');
+
+    // Hold the page-2 request open so the in-between state is observable.
+    let releasePage2: (value: ProductListResponse) => void = () => undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('/api/categories')) return jsonResponse(categoriesFixture);
+        if (url.includes('page=2')) {
+          return new Promise<Response>((resolve) => {
+            releasePage2 = (body) => resolve(jsonResponse(body));
+          });
+        }
+        return jsonResponse(productResponse([productFixture()]));
+      })
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+
+    expect(await screen.findByText('Loading products…')).toBeInTheDocument();
+    // The previous page stays on screen, but the pagination already reflects
+    // the page the URL asks for.
+    expect(screen.getByRole('button', { name: 'Page 2' })).toHaveAttribute('aria-current', 'page');
+
+    releasePage2(
+      productResponse([productFixture({ id: 2, title: 'Page 2 product' })], { page: 2 })
+    );
+    expect(await screen.findByText('Page 2 product')).toBeInTheDocument();
+    expect(screen.queryByText('Loading products…')).not.toBeInTheDocument();
+  });
+
+  it('scrolls to the top when the page changes', async () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    renderPage('/?page=2');
+
+    await screen.findByTestId('product-price');
+    // Loading a page from the URL is not a page change the user made.
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith(0, 0));
+    scrollTo.mockRestore();
   });
 
   it('navigates to the next page', async () => {

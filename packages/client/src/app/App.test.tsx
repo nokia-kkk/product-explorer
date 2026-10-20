@@ -21,6 +21,7 @@ function stubApiFetch() {
         thumbnail: 'https://cdn.dummyjson.com/mascara.webp',
         brand: 'Essence',
         category: 'beauty',
+        categorySlug: 'beauty',
       },
     ],
     meta: { total: 1, page: 1, limit: 12, pageCount: 1 },
@@ -160,6 +161,70 @@ describe('App', () => {
     fireEvent.click(links[0]);
 
     expect(await screen.findByText('A volumising mascara.')).toBeInTheDocument();
+  });
+
+  it('searches from the header without pressing Enter', async () => {
+    const requestedUrls: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (!url.includes('/api/categories')) requestedUrls.push(url);
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ data: [], meta: { total: 0, page: 1, limit: 12, pageCount: 0 } }),
+        } as unknown as Response;
+      })
+    );
+
+    renderApp();
+    await screen.findByText('No products found');
+    requestedUrls.length = 0;
+
+    const header = screen.getByRole('banner');
+    fireEvent.change(within(header).getByRole('searchbox', { name: 'Search all products' }), {
+      target: { value: 'mascara' },
+    });
+
+    await waitFor(
+      () => {
+        expect(requestedUrls.some((url) => url.includes('q=mascara'))).toBe(true);
+      },
+      { timeout: 2000 }
+    );
+  });
+
+  it('keeps both search inputs in sync, including when cleared', async () => {
+    renderApp(['/?q=mascara']);
+
+    const header = screen.getByRole('banner');
+    const headerInput = within(header).getByRole('searchbox', { name: 'Search all products' });
+    const toolbarInput = screen.getByRole('searchbox', { name: 'Search products' });
+
+    // The URL seeds both inputs.
+    await waitFor(() => {
+      expect(headerInput).toHaveValue('mascara');
+      expect(toolbarInput).toHaveValue('mascara');
+    });
+
+    // Typing in the toolbar reaches the header once the term settles.
+    fireEvent.change(toolbarInput, { target: { value: 'gown' } });
+    await waitFor(
+      () => {
+        expect(headerInput).toHaveValue('gown');
+      },
+      { timeout: 2000 }
+    );
+
+    // Clearing either one clears both and drops the param.
+    fireEvent.change(headerInput, { target: { value: '' } });
+    await waitFor(
+      () => {
+        expect(toolbarInput).toHaveValue('');
+      },
+      { timeout: 2000 }
+    );
   });
 
   it('submits the header search and refetches with the q param', async () => {

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCategories } from '../../categories/hooks/useCategories';
 import { useProductListParams } from '../hooks/useProductListParams';
 import { useProducts } from '../hooks/useProducts';
@@ -28,6 +28,17 @@ export function ProductBrowser({ title, lockedCategory }: ProductBrowserProps) {
     useProductListParams(lockedCategory);
   const categories = useCategories();
   const products = useProducts(listParamsToQuery(params, category));
+
+  // Paging happens at the bottom of the page, so the new results would otherwise
+  // arrive off screen. Any change to the page number scrolls — including Back
+  // and forward, which React Router does not scroll-restore on its own. The
+  // first render sets the baseline instead of scrolling.
+  const previousPage = useRef(params.page);
+  useEffect(() => {
+    if (previousPage.current === params.page) return;
+    previousPage.current = params.page;
+    window.scrollTo(0, 0);
+  }, [params.page]);
 
   // A dismissed banner stays dismissed only for the params it was dismissed for,
   // so changing filters (and failing again) surfaces a fresh one.
@@ -65,6 +76,15 @@ export function ProductBrowser({ title, lockedCategory }: ProductBrowserProps) {
 
       {products.isLoading && <ProductListSkeleton count={8} />}
 
+      {/* Only reachable when there is already data: the first load shows the
+          skeleton instead. Covers page changes and retries, where the previous
+          grid stays on screen. */}
+      {products.isFetching && !products.isLoading && (
+        <p role="status" className="text-xs text-muted-foreground">
+          Loading products…
+        </p>
+      )}
+
       {!products.isLoading && !products.isError && products.data.length === 0 && (
         <ProductListEmpty onClearFilters={handleClearFilters} />
       )}
@@ -72,13 +92,11 @@ export function ProductBrowser({ title, lockedCategory }: ProductBrowserProps) {
       {products.data.length > 0 && <ProductGrid products={products.data} />}
 
       {/* Kept outside the results block so an out-of-range page still shows its
-          position ("Page 999 of 10") next to the empty state. */}
+          position ("Page 999 of 10") next to the empty state. The highlighted
+          page comes from the URL, so it moves as soon as paging is clicked;
+          `pageCount` is the previous response's until the new one lands. */}
       {products.meta && products.meta.pageCount > 1 && (
-        <Pagination
-          page={products.meta.page}
-          pageCount={products.meta.pageCount}
-          onPageChange={setPage}
-        />
+        <Pagination page={params.page} pageCount={products.meta.pageCount} onPageChange={setPage} />
       )}
     </section>
   );

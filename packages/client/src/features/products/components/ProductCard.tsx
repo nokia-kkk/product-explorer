@@ -1,7 +1,8 @@
 import type { ProductListItem } from '@miniapp/shared';
 import { Link } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
+import { Badge, badgeVariants } from '@/components/ui/badge';
 import { discountedPrice, currency } from '@/shared/lib/format';
+import { cn } from '@/lib/utils';
 import { ProductImage } from './ProductImage';
 import { StarIcon } from './StarIcon';
 
@@ -13,11 +14,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const discounted = discountedPrice(product);
 
   return (
-    <Link
-      to={`/products/${product.id}`}
-      aria-label={product.title}
-      className="group flex h-full w-full flex-col overflow-hidden rounded-md border border-border bg-card transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-    >
+    <div className="group relative flex h-full w-full flex-col overflow-hidden rounded-md border border-border bg-card transition-colors hover:border-primary/40">
       <div className="relative aspect-square w-full overflow-hidden bg-muted">
         <ProductImage
           src={product.thumbnail}
@@ -35,9 +32,13 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-3.5">
-        <Badge variant="secondary" className="w-fit capitalize">
+        <Link
+          to={`/categories/${product.categorySlug}`}
+          aria-label={`Browse ${product.category}`}
+          className={cn('relative z-10 w-fit capitalize', badgeVariants({ variant: 'secondary' }))}
+        >
           {product.category}
-        </Badge>
+        </Link>
 
         <h2 className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
           {product.title}
@@ -68,6 +69,15 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
       </div>
-    </Link>
+
+      {/* The product link is an empty overlay stretched across the card, and the
+          category badge sits above it on its own link. Keeps both clickable
+          without nesting anchors, and leaves the layout exactly as it was. */}
+      <Link
+        to={`/products/${product.id}`}
+        aria-label={product.title}
+        className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      />
+    </div>
   );
 }

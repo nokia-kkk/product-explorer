@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SearchInput } from '@/components/ui/search-input';
+import { useSearchField } from '@/shared/hooks/useSearchField';
 import { cn } from '@/lib/utils';
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
@@ -21,15 +22,24 @@ function isListingRoute(pathname: string): boolean {
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [term, setTerm] = useState('');
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
   const showSearch = isListingRoute(pathname);
+
+  // Unlike the toolbar's input, this one always lands on the full product list,
+  // so it commits by navigating rather than editing the current listing.
+  const commit = useCallback(
+    (q: string) => {
+      navigate({ pathname: '/', search: q ? `?q=${encodeURIComponent(q)}` : '' });
+    },
+    [navigate]
+  );
+  const [term, setTerm] = useSearchField(searchParams.get('q') ?? '', commit);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const q = term.trim();
-    navigate({ pathname: '/', search: q ? `?q=${encodeURIComponent(q)}` : '' });
+    commit(term.trim());
   };
 
   return (

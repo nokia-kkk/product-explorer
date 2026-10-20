@@ -4,6 +4,8 @@
 A sellable item with properties: id, title, description, price, discountPercentage, rating, stock, brand, category, thumbnail, images[].
 Sourced from DummyJSON and stored in SQLite.
 
+ListItem form (`GET /api/products`): the fields needed for a card, plus `categorySlug` so a card can link to its category without deriving the slug. The detail form carries no `categorySlug`.
+
 ## Category
 A classification for products. Properties: id, name, slug (derived from name), productCount (computed).
 Each product belongs to exactly one category (per DummyJSON structure).

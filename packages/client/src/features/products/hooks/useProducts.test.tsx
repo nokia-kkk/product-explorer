@@ -16,6 +16,7 @@ const product = {
   thumbnail: 'thumb.webp',
   brand: 'Essence',
   category: 'beauty',
+  categorySlug: 'beauty',
 };
 
 const listResponse: ProductListResponse = {

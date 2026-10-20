@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import type { CategoryWithCount, ProductSortField, SortOrder } from '@miniapp/shared';
 import { SearchInput } from '@/components/ui/search-input';
 import {
@@ -8,10 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
+import { useSearchField } from '@/shared/hooks/useSearchField';
 import { SORT_OPTIONS, parseSortOptionValue, sortOptionValue } from '../lib/sortOptions';
-
-const SEARCH_DEBOUNCE_MS = 300;
 
 type ProductToolbarProps = {
   title: string;
@@ -40,26 +37,8 @@ export function ProductToolbar({
   onCategoryChange,
   onSortChange,
 }: ProductToolbarProps) {
-  const [term, setTerm] = useState(search);
-  const debouncedTerm = useDebouncedValue(term, SEARCH_DEBOUNCE_MS);
-  // Tracks the last value this input committed to the URL, so the two effects
-  // below can tell "the user typed this" apart from "the URL changed".
-  const lastCommitted = useRef(search);
-
-  // Push a settled term outward. Skipped when the change came from the URL.
-  useEffect(() => {
-    if (debouncedTerm === lastCommitted.current) return;
-    lastCommitted.current = debouncedTerm;
-    onSearchChange(debouncedTerm.trim());
-  }, [debouncedTerm, onSearchChange]);
-
-  // Keep the input in sync when the search param changes externally
-  // (e.g. via the header search or "Clear filters").
-  useEffect(() => {
-    if (search === lastCommitted.current) return;
-    lastCommitted.current = search;
-    setTerm(search);
-  }, [search]);
+  // Debounced, and kept in sync with the URL and the header's search input.
+  const [term, setTerm] = useSearchField(search, onSearchChange);
 
   return (
     <div className="flex flex-col gap-5">

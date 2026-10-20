@@ -40,6 +40,7 @@ export interface ProductListItem {
   thumbnail: string;
   brand: string;
   category: string;
+  categorySlug: string;
 }
 
 export interface ProductListResponse {

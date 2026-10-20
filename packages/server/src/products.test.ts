@@ -41,6 +41,7 @@ describe('listProducts', () => {
       thumbnail: 'thumb-4.jpg',
       brand: 'Farm',
       category: 'Groceries',
+      categorySlug: 'groceries',
     });
   });
 

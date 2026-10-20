@@ -17,6 +17,7 @@ const productFixture = (overrides: Partial<Product> = {}): Product => ({
   thumbnail: 'https://cdn.dummyjson.com/mascara.webp',
   brand: 'Essence',
   category: 'Beauty',
+  categorySlug: 'beauty',
   ...overrides,
 });
 
