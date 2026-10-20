@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build && npm run import",
+  "outputDirectory": "packages/client/dist",
+  "functions": { "api/[...path].ts": { "includeFiles": "data/app.db" } },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/[...path]" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
