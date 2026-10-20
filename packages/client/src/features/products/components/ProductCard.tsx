@@ -1,7 +1,6 @@
 import type { ProductListItem } from '@miniapp/shared';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { discountedPrice, currency } from '@/shared/lib/format';
 import { ProductImage } from './ProductImage';
 import { StarIcon } from './StarIcon';
@@ -14,57 +13,61 @@ export function ProductCard({ product }: ProductCardProps) {
   const discounted = discountedPrice(product);
 
   return (
-    <Card className="group h-full overflow-hidden rounded-lg shadow-sm transition-shadow hover:shadow-md">
-      <Link to={`/products/${product.id}`} className="block">
+    <Link
+      to={`/products/${product.id}`}
+      aria-label={product.title}
+      className="group flex h-full w-full flex-col overflow-hidden rounded-md border border-border bg-card transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      <div className="relative aspect-square w-full overflow-hidden bg-muted">
         <ProductImage
           src={product.thumbnail}
           alt={product.title}
-          className="aspect-square w-full bg-muted object-cover"
+          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
-      </Link>
+        {discounted !== null && (
+          <Badge
+            data-testid="product-discount"
+            className="absolute left-2.5 top-2.5 bg-sale text-primary-foreground hover:bg-sale"
+          >
+            -{Math.round(product.discountPercentage)}%
+          </Badge>
+        )}
+      </div>
 
-      <CardContent className="flex flex-1 flex-col gap-2 p-3">
+      <div className="flex flex-1 flex-col gap-2 p-3.5">
         <Badge variant="secondary" className="w-fit capitalize">
           {product.category}
         </Badge>
 
-        <Link
-          to={`/products/${product.id}`}
-          className="line-clamp-2 text-sm font-medium text-foreground hover:underline"
-        >
+        <h2 className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
           {product.title}
-        </Link>
-
-        <div className="mt-auto flex items-baseline gap-2">
-          <span className="text-base font-semibold text-foreground" data-testid="product-price">
-            {currency.format(discounted ?? product.price)}
-          </span>
-          {discounted !== null && (
-            <>
-              <span
-                data-testid="product-price-original"
-                className="text-xs text-muted-foreground line-through"
-              >
-                {currency.format(product.price)}
-              </span>
-              <Badge
-                data-testid="product-discount"
-                className="border-transparent bg-green-100 text-xs text-green-700"
-              >
-                -{Math.round(product.discountPercentage)}%
-              </Badge>
-            </>
-          )}
-        </div>
+        </h2>
 
         <span
           className="flex items-center gap-1 text-xs text-muted-foreground"
           data-testid="product-rating"
         >
-          <StarIcon className="h-4 w-4 text-yellow-500" />
+          <StarIcon className="h-3.5 w-3.5 text-sale" />
           {product.rating.toFixed(1)}
         </span>
-      </CardContent>
-    </Card>
+
+        <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-t border-border pt-2.5">
+          <span
+            className="price-block text-lg leading-none text-foreground"
+            data-testid="product-price"
+          >
+            {currency.format(discounted ?? product.price)}
+          </span>
+          {discounted !== null && (
+            <span
+              data-testid="product-price-original"
+              className="text-xs text-muted-foreground line-through"
+            >
+              {currency.format(product.price)}
+            </span>
+          )}
+        </div>
+      </div>
+    </Link>
   );
 }

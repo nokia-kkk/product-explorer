@@ -5,11 +5,21 @@ const PLACEHOLDER_SVG = (
     aria-hidden="true"
     data-testid="product-image-placeholder"
     viewBox="0 0 100 100"
-    className="h-full w-full text-muted"
+    className="h-full w-full"
   >
     <rect width="100" height="100" fill="hsl(var(--muted))" />
-    <circle cx="38" cy="36" r="12" fill="currentColor" />
-    <path d="M18 78 L44 50 L60 66 L74 54 L84 78 Z" fill="currentColor" />
+    <g
+      fill="none"
+      stroke="hsl(var(--muted-foreground))"
+      strokeOpacity="0.45"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="28" y="30" width="44" height="40" rx="2" />
+      <circle cx="40" cy="42" r="4" />
+      <path d="M30 64l11-12 8 8 7-6 12 10" />
+    </g>
   </svg>
 );
 

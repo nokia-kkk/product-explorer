@@ -6,6 +6,10 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Hanken Grotesk"', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        display: ['Newsreader', 'Georgia', 'Cambria', 'serif'],
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -40,6 +44,8 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        sale: 'hsl(var(--sale))',
+        success: 'hsl(var(--success))',
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -55,10 +61,15 @@ export default {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        shimmer: {
+          from: { backgroundPosition: '150% 0' },
+          to: { backgroundPosition: '-50% 0' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        shimmer: 'shimmer 1.6s linear infinite',
       },
     },
   },

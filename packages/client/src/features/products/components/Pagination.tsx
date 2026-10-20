@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -41,55 +42,72 @@ export function Pagination({ page, pageCount, onPageChange }: PaginationProps) {
   );
 
   return (
-    <nav aria-label="Product list pagination" className="flex items-center justify-center gap-1">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        aria-label="Previous page"
-        disabled={page <= 1}
-        onClick={() => goTo(page - 1)}
+    <nav
+      aria-label="Product list pagination"
+      className="flex flex-col items-center gap-3 border-t border-border pt-6 sm:flex-row sm:justify-center"
+    >
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="gap-0.5 px-2"
+          aria-label="Previous page"
+          disabled={page <= 1}
+          onClick={() => goTo(page - 1)}
+        >
+          <ChevronLeft />
+          <span className="hidden sm:inline">Previous</span>
+        </Button>
+
+        {computePageNumbers(page, pageCount).map((entry, index) =>
+          entry === '…' ? (
+            <span
+              key={`ellipsis-${index}`}
+              aria-hidden="true"
+              className="px-1 text-sm text-muted-foreground"
+            >
+              …
+            </span>
+          ) : (
+            <Button
+              key={`page-${entry}`}
+              type="button"
+              variant={entry === page ? 'default' : 'ghost'}
+              size="sm"
+              className={cn(
+                'min-w-9 px-2 tabular-nums',
+                entry === page
+                  ? 'pointer-events-none font-medium'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+              aria-label={`Page ${entry}`}
+              aria-current={entry === page ? 'page' : undefined}
+              onClick={() => goTo(entry)}
+            >
+              {entry}
+            </Button>
+          )
+        )}
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="gap-0.5 px-2"
+          aria-label="Next page"
+          disabled={page >= pageCount}
+          onClick={() => goTo(page + 1)}
+        >
+          <span className="hidden sm:inline">Next</span>
+          <ChevronRight />
+        </Button>
+      </div>
+
+      <span
+        aria-live="polite"
+        className="text-xs text-muted-foreground sm:ml-4 sm:border-l sm:border-border sm:pl-4"
       >
-        Previous
-      </Button>
-
-      {computePageNumbers(page, pageCount).map((entry, index) =>
-        entry === '…' ? (
-          <span
-            key={`ellipsis-${index}`}
-            aria-hidden="true"
-            className="px-1 text-sm text-muted-foreground"
-          >
-            …
-          </span>
-        ) : (
-          <Button
-            key={`page-${entry}`}
-            type="button"
-            variant={entry === page ? 'default' : 'outline'}
-            size="sm"
-            className={cn('min-w-9 px-2', entry === page && 'font-semibold')}
-            aria-label={`Page ${entry}`}
-            aria-current={entry === page ? 'page' : undefined}
-            onClick={() => goTo(entry)}
-          >
-            {entry}
-          </Button>
-        )
-      )}
-
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        aria-label="Next page"
-        disabled={page >= pageCount}
-        onClick={() => goTo(page + 1)}
-      >
-        Next
-      </Button>
-
-      <span aria-live="polite" className="ml-2 text-sm text-muted-foreground">
         Page {page} of {pageCount}
       </span>
     </nav>

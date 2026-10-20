@@ -12,9 +12,9 @@ export function CategoryListSkeleton({ count = 8 }: CategoryListSkeletonProps) {
       aria-label="Loading categories"
     >
       {Array.from({ length: count }, (_, index) => (
-        <li key={`skeleton-${index}`} className="rounded-lg border bg-card p-4">
-          <Skeleton className="h-4 w-2/3 rounded" />
-          <Skeleton className="mt-2 h-3 w-1/3 rounded" />
+        <li key={`skeleton-${index}`} className="rounded-md border border-border bg-card p-4">
+          <Skeleton className="h-5 w-2/3 rounded-sm" />
+          <Skeleton className="mt-2 h-3 w-1/3 rounded-sm" />
         </li>
       ))}
     </ul>

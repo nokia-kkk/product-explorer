@@ -8,7 +8,16 @@ export function CategoryListPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-foreground">Categories</h1>
+      <div className="masthead">
+        <h1 className="font-display text-3xl leading-none text-foreground md:text-4xl">
+          Categories
+        </h1>
+        {categories.data && (
+          <p className="text-xs text-muted-foreground">
+            {categories.data.length} {categories.data.length === 1 ? 'category' : 'categories'}
+          </p>
+        )}
+      </div>
 
       {categories.isError && <CategoryListError onRetry={() => categories.refetch()} />}
 

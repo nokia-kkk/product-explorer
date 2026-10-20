@@ -16,12 +16,14 @@ export function ProductGallery({ title, thumbnail, images }: ProductGalleryProps
 
   return (
     <div className="flex flex-col gap-3">
-      <ProductImage
-        src={active}
-        alt={title}
-        data-testid="main-image"
-        className="aspect-square w-full rounded-lg border bg-muted object-cover"
-      />
+      <div className="overflow-hidden rounded-md border border-border bg-muted">
+        <ProductImage
+          src={active}
+          alt={title}
+          data-testid="main-image"
+          className="aspect-square w-full object-cover"
+        />
+      </div>
 
       {gallery.length > 1 && (
         <ul
@@ -36,10 +38,10 @@ export function ProductGallery({ title, thumbnail, images }: ProductGalleryProps
                 aria-current={index === selected ? 'true' : undefined}
                 onClick={() => setSelected(index)}
                 className={cn(
-                  'block h-16 w-16 overflow-hidden rounded-md border bg-muted',
+                  'block h-16 w-16 overflow-hidden rounded-md border bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                   index === selected
-                    ? 'border-foreground ring-2 ring-foreground'
-                    : 'hover:border-muted-foreground'
+                    ? 'border-primary ring-1 ring-primary'
+                    : 'border-border opacity-80 hover:border-muted-foreground hover:opacity-100'
                 )}
               >
                 <ProductImage

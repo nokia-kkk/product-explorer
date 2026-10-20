@@ -1,3 +1,4 @@
+import { AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type ProductListErrorProps = {
@@ -6,39 +7,56 @@ type ProductListErrorProps = {
   onDismiss?: () => void;
 };
 
-/** The failed-to-load banner for the product list, with optional dismiss. */
-export function ProductListError({ onRetry, onDismiss }: ProductListErrorProps) {
+/** The shared failed-to-load banner: moss-tinted card, alert icon, retry first. */
+function ErrorBanner({
+  message,
+  onRetry,
+  onDismiss,
+  testId,
+  retryTestId,
+}: {
+  message: string;
+  onRetry: () => void;
+  onDismiss?: () => void;
+  testId?: string;
+  retryTestId?: string;
+}) {
   return (
     <div
       role="alert"
-      data-testid="products-error-banner"
-      className="flex items-center justify-between rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+      data-testid={testId}
+      className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/25 border-l-2 border-l-destructive bg-destructive/[0.04] px-4 py-3 text-sm text-foreground"
     >
-      <span>Failed to load products. Please try again.</span>
-      <span className="flex items-center gap-2">
+      <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0 text-destructive" />
+      <span className="mr-auto">{message}</span>
+      <Button type="button" variant="outline" size="sm" data-testid={retryTestId} onClick={onRetry}>
+        Retry
+      </Button>
+      {onDismiss && (
         <Button
           type="button"
-          variant="outline"
-          size="sm"
-          data-testid="products-retry"
-          className="border-destructive/40 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
-          onClick={onRetry}
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          aria-label="Dismiss"
+          onClick={onDismiss}
         >
-          Retry
+          <X />
         </Button>
-        {onDismiss && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={onDismiss}
-          >
-            Dismiss
-          </Button>
-        )}
-      </span>
+      )}
     </div>
+  );
+}
+
+export function ProductListError({ onRetry, onDismiss }: ProductListErrorProps) {
+  return (
+    <ErrorBanner
+      message="Failed to load products. Please try again."
+      testId="products-error-banner"
+      retryTestId="products-retry"
+      onRetry={onRetry}
+      onDismiss={onDismiss}
+    />
   );
 }
 
@@ -48,21 +66,5 @@ type CategoryListErrorProps = {
 
 /** The failed-to-load banner for the category list. */
 export function CategoryListError({ onRetry }: CategoryListErrorProps) {
-  return (
-    <div
-      role="alert"
-      className="flex items-center justify-between rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
-    >
-      <span>Failed to load categories. Please try again.</span>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="border-destructive/40 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
-        onClick={onRetry}
-      >
-        Retry
-      </Button>
-    </div>
-  );
+  return <ErrorBanner message="Failed to load categories. Please try again." onRetry={onRetry} />;
 }

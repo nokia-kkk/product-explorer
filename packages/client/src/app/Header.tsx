@@ -3,14 +3,15 @@ import type { FormEvent } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/ui/search-input';
 import { cn } from '@/lib/utils';
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
   cn(
+    'w-fit border-b-2 pb-0.5 text-sm transition-colors',
     isActive
-      ? 'font-medium text-foreground'
-      : 'text-muted-foreground transition-colors hover:text-foreground'
+      ? 'border-primary font-medium text-foreground'
+      : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
   );
 
 /** Routes that show product listings (and therefore the header search input). */
@@ -32,13 +33,13 @@ export function Header() {
   };
 
   return (
-    <header className="border-b bg-card">
-      <div className="mx-auto flex w-full max-w-6xl items-center gap-4 px-4 py-3">
+    <header className="sticky top-0 z-40 border-b border-border bg-card">
+      <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-4 md:gap-6 md:px-6">
         <Button
           type="button"
           variant="outline"
           size="icon"
-          className="h-9 w-9 md:hidden"
+          className="h-10 w-10 shrink-0 md:hidden"
           aria-label="Toggle navigation menu"
           aria-expanded={menuOpen}
           aria-controls="mobile-nav"
@@ -47,8 +48,11 @@ export function Header() {
           {menuOpen ? <X /> : <Menu />}
         </Button>
 
-        <Link to="/" className="text-lg font-semibold text-foreground">
-          MiniApp
+        <Link
+          to="/"
+          className="whitespace-nowrap font-display text-xl leading-none text-foreground transition-colors hover:text-primary md:text-2xl"
+        >
+          Nokia app
         </Link>
 
         <nav aria-label="Primary" className="hidden items-center gap-6 md:flex">
@@ -61,25 +65,28 @@ export function Header() {
         </nav>
 
         {showSearch && (
-          <form role="search" onSubmit={handleSubmit} className="ml-auto md:ml-0">
+          <form
+            role="search"
+            onSubmit={handleSubmit}
+            className="ml-auto min-w-0 flex-1 md:ml-0 md:flex-none"
+          >
             {/* Distinct from the toolbar's input, which filters the listing in place;
                 this one always navigates to the full product list. */}
-            <Input
-              type="search"
+            <SearchInput
               name="q"
               value={term}
               onChange={(event) => setTerm(event.target.value)}
               aria-label="Search all products"
               placeholder="Search products…"
-              className="w-44 md:w-64"
+              className="w-full md:w-64"
             />
           </form>
         )}
       </div>
 
       {menuOpen && (
-        <div id="mobile-nav" className="border-t md:hidden">
-          <nav aria-label="Mobile" className="flex flex-col gap-1 px-4 py-3">
+        <div id="mobile-nav" className="border-t border-border md:hidden">
+          <nav aria-label="Mobile" className="flex flex-col gap-2 px-4 py-4">
             <NavLink to="/" end className={navLinkClassName} onClick={() => setMenuOpen(false)}>
               Products
             </NavLink>

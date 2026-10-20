@@ -3,26 +3,25 @@ import { useCategories } from '../features/categories/hooks/useCategories';
 import { ProductBrowser } from '../features/products/components/ProductBrowser';
 
 function Breadcrumb({ name }: { name: string }) {
+  const linkClass = 'text-muted-foreground transition-colors hover:text-foreground';
+
   return (
-    <nav aria-label="Breadcrumb" className="text-sm">
-      <ol className="flex items-center gap-2">
+    <nav aria-label="Breadcrumb" className="text-xs">
+      <ol className="flex flex-wrap items-center gap-1.5">
         <li>
-          <Link to="/" className="text-muted-foreground hover:text-foreground hover:underline">
+          <Link to="/" className={linkClass}>
             Home
           </Link>
         </li>
-        <li aria-hidden="true" className="text-muted-foreground">
+        <li aria-hidden="true" className="text-border">
           /
         </li>
         <li>
-          <Link
-            to="/categories"
-            className="text-muted-foreground hover:text-foreground hover:underline"
-          >
+          <Link to="/categories" className={linkClass}>
             Categories
           </Link>
         </li>
-        <li aria-hidden="true" className="text-muted-foreground">
+        <li aria-hidden="true" className="text-border">
           /
         </li>
         <li aria-current="page" className="font-medium capitalize text-foreground">

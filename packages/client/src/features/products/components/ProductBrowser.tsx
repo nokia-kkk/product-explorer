@@ -50,6 +50,7 @@ export function ProductBrowser({ title, lockedCategory }: ProductBrowserProps) {
         sortBy={params.sortBy}
         order={params.order}
         categories={categories.data}
+        total={products.meta?.total}
         onSearchChange={setSearch}
         onSortChange={setSort}
         onCategoryChange={lockedCategory ? undefined : setCategory}

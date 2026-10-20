@@ -91,10 +91,10 @@ describe('Badge', () => {
 });
 
 describe('Skeleton', () => {
-  it('renders a pulsing placeholder that merges caller sizing', () => {
+  it('renders a shimmering placeholder that merges caller sizing', () => {
     render(<Skeleton data-testid="s" className="h-4 w-1/2" />);
 
-    expect(screen.getByTestId('s').className).toContain('animate-pulse');
+    expect(screen.getByTestId('s').className).toContain('skeleton-shimmer');
     expect(screen.getByTestId('s').className).toContain('h-4');
   });
 });

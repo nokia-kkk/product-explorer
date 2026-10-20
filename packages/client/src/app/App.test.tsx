@@ -91,7 +91,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Products' })).toBeInTheDocument();
 
     const header = screen.getByRole('banner');
-    expect(within(header).getByRole('link', { name: 'MiniApp' })).toHaveAttribute('href', '/');
+    expect(within(header).getByRole('link', { name: 'Nokia app' })).toHaveAttribute('href', '/');
     expect(within(header).getByRole('link', { name: 'Categories' })).toHaveAttribute(
       'href',
       '/categories'
